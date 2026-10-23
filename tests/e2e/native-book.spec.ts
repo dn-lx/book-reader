@@ -14,7 +14,7 @@ test("native text bridge reports exact selected words and document identity with
   const context = "demo:</script>:0";
   const html = bookTextHtml(
     paginateReading(fixture.chapters[0].segments, 180)[0],
-    "<img src=x onerror=alert(1)>",
+    "<img src=x onerror=alert(1)> · Café 🌿",
     0,
     true,
     readingAppearance(null),
@@ -43,7 +43,9 @@ test("native text bridge reports exact selected words and document identity with
     route.fulfill({ contentType: "text/html", body: html }),
   );
   await page.goto("/__test/native-text");
-  await expect(page.locator("h1")).toHaveText("<img src=x onerror=alert(1)>");
+  await expect(page.locator("h1")).toHaveText(
+    "<img src=x onerror=alert(1)> · Café 🌿",
+  );
   await expect(page.locator("img")).toHaveCount(0);
   await page.locator("[data-listen]").first().click();
   await page
@@ -81,5 +83,37 @@ test("native text bridge reports exact selected words and document identity with
     endOffset: 14,
     context,
   });
+  await page
+    .locator("[data-fragment]")
+    .first()
+    .evaluate((el) => {
+      const last = document.querySelectorAll("[data-fragment]")[1];
+      const range = document.createRange();
+      range.setStart(el.firstChild!, 2);
+      range.setEnd(last.firstChild!, 7);
+      const selection = getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as any).messages
+            .filter((m: any) => m.type === "selection")
+            .at(-1)?.endSegment,
+      ),
+    )
+    .toBe(1);
+  const across = await page.evaluate(() =>
+    (window as any).messages.filter((m: any) => m.type === "selection").at(-1),
+  );
+  expect(across.quote.replace(/\s+/g, " ")).toBe(
+    (
+      fixture.chapters[0].segments[0].text.slice(2) +
+      " " +
+      fixture.chapters[0].segments[1].text.slice(0, 7)
+    ).trim(),
+  );
   expect(errors).toEqual([]);
 });

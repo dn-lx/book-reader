@@ -34,6 +34,10 @@ async function logout(page: Page) {
   await expect(
     page.getByRole("heading", { name: "Welcome back." }),
   ).toBeVisible();
+  // The reader closes immediately; the form becomes available after worker cleanup/revocation.
+  await expect(
+    page.getByRole("button", { name: "Enter my library", exact: true }),
+  ).toBeEnabled();
 }
 test("invitation-only sign-in is accessible and book files reject anonymous requests", async ({
   page,
