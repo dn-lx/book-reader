@@ -4,6 +4,11 @@ import { resolve, extname } from "node:path";
 import { createReaderApi } from "../server/reader-api.ts";
 import { proxyReader, authorizeMedia } from "../server/web-boundary.ts";
 import {
+  longBook,
+  mixedBook,
+  untimedBook,
+} from "../tests/fixtures/reading-books.ts";
+import {
   fixtureDatabase,
   testPassword,
 } from "../tests/fixtures/reader-database.ts";
@@ -77,7 +82,16 @@ http
       let body: Buffer, type: string;
       if (path === "/library.json") {
         body = Buffer.from(
-          JSON.stringify({ books: [{ url: "/books/demo/book.json" }] }),
+          JSON.stringify({
+            books: [
+              {
+                url:
+                  process.env.READER_TEST_MANIFEST === "1"
+                    ? "/books/manifest/book.json"
+                    : "/books/demo/book.json",
+              },
+            ],
+          }),
         );
         type = "application/json";
       } else if (path.startsWith("/books/demo/")) {
@@ -86,7 +100,22 @@ http
           : path.endsWith(".pdf")
             ? "book.pdf"
             : "audio.wav";
-        body = await readFile(resolve("tests/fixtures", name));
+        // Isolated browser contexts choose a corpus without bypassing the real worker/auth path.
+        const corpus =
+          /(?:^|; )reader-test-corpus=(long|mixed|untimed)(?:;|$)/.exec(
+            req.headers.cookie || "",
+          )?.[1];
+        const variants = {
+          long: longBook,
+          mixed: mixedBook,
+          untimed: untimedBook,
+        };
+        body =
+          name === "book.json" && corpus
+            ? Buffer.from(
+                JSON.stringify(variants[corpus as keyof typeof variants]),
+              )
+            : await readFile(resolve("tests/fixtures", name));
         type = types[extname(name)];
       } else {
         let file = resolve(root, "." + path);

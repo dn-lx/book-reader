@@ -9,8 +9,11 @@ import {
   segmentAt,
 } from "@pagechime/core";
 import type { ReaderStorage } from "./storage";
-export function usePlayback(notify: (s: string) => void,storage:ReaderStorage) {
-  const {readSaved,writeSaved}=storage;
+export function usePlayback(
+  notify: (s: string) => void,
+  storage: ReaderStorage,
+) {
+  const { readSaved, writeSaved } = storage;
   const [book, setBook] = useState<Book | null>(null),
     [chapter, setChapter] = useState(0),
     [time, setTime] = useState(0),
@@ -39,6 +42,7 @@ export function usePlayback(notify: (s: string) => void,storage:ReaderStorage) {
       time: a.currentTime || 0,
       page: pageRef.current,
       updated: Date.now(),
+      reading: readSaved<Progress | null>("progress." + b.id, null)?.reading,
     };
     writeSaved("progress." + b.id, p);
   }, []);

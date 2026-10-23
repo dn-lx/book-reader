@@ -9,11 +9,11 @@
 
 ## Architecture
 
-- **Website:** Next.js 16 App Router, React, TypeScript, static export; PDF.js legacy bundle loaded on demand. Motion respects reduced-motion preferences. Installable PWA.
-- **Native:** Expo 58 / React Native for iOS and Android; native Expo audio, platform controls, offline PDF.js inside a restricted WebView. Native bundles are separate from signed installs.
-- **Shared core:** packages/core exports typed book/chapters/passages, schema validation, seeking and timing selection.
+- **Website:** Next.js 16 App Router, React, TypeScript, static export; reflowable text pages with durable anchors and optional PDF.js loaded on demand. Motion respects reduced-motion preferences. Installable PWA.
+- **Native:** Expo 58 / React Native for iOS and Android; native Expo audio, platform controls, shared text pagination/anchors, selectable text in a restricted WebView and optional offline PDF.js. Native bundles are separate from signed installs.
+- **Shared core:** packages/core exports typed book/chapters/passages, schema validation, seeking, timing selection and lossless reading pagination/highlights.
 - **Storage:** Web IndexedDB for imported books; localStorage for progress, bookmarks/preferences; Cache Storage for explicit downloads. Native document directory plus AsyncStorage. Imported files and preferences are device local; bookmarks, notes and reading positions sync through a custom Me+ API. No analytics.
-- **Hosting:** Netlify development project pagechime-dev, configured but deployment blocked by CLI/network setup. The unused private ChatGPT Site is not deployed. Code is public; private book media/transcripts are ignored build inputs.
+- **Hosting:** Netlify development project pagechime, configured but deployment blocked by CLI/network setup. The unused private ChatGPT Site is not deployed. Code is public; private book media/transcripts are ignored build inputs.
 - **Voices:** Full private Kokoro Emma British female narration; Google Neural2 setup pending at the user's request. Optional generation runs locally with Google Cloud ADC, never in either client. Timings are generated separately for each voice.
 
 ## Important paths
@@ -49,4 +49,4 @@ Source/tests/runtime evidence override stale documentation. See docs/CONTENT-AND
 
 ## Branding compatibility
 
-Pagechime is the accepted product name. Workspace packages use @pagechime; Expo slug is pagechime. Keep legacy leaf.* persistence keys, app.dnlx.leaf native identifiers and the live book-reader-api/book_reader_* backend identities stable so rebranding does not create separate data containers. The Netlify project was renamed in place to pagechime-dev; no second development site is used. A hostname change requires fresh sign-in and cannot transfer browser-only imports/caches across origins.
+Pagechime is the accepted product name. Workspace packages use @pagechime; Expo slug is pagechime. Keep legacy leaf.* persistence keys, app.dnlx.leaf native identifiers and the live book-reader-api/book_reader_* backend identities stable so rebranding does not create separate data containers. The Netlify project was renamed in place to pagechime; no second development site is used. A hostname change requires fresh sign-in and cannot transfer browser-only imports/caches across origins.

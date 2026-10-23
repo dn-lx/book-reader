@@ -1,0 +1,754 @@
+"use client";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowsOut,
+  BookmarkSimple,
+  BookOpen,
+  Check,
+  DownloadSimple,
+  FilePdf,
+  Headphones,
+  Highlighter,
+  Leaf,
+  NotePencil,
+  Pause,
+  Play,
+  TextAa,
+  X,
+} from "@phosphor-icons/react";
+import {
+  clamp,
+  paginateReading,
+  readingAnchorAt,
+  readingAppearance,
+  readingPageAt,
+  readingWordBudget,
+  readingProgress,
+  readingHighlights,
+  segmentAt,
+  type Bookmark,
+  type Progress,
+  type ReaderNote,
+  type ReadingAnchor,
+  type ReadingAppearance,
+  type ReadingFragment,
+} from "@pagechime/core";
+import { useAccount } from "../lib/account";
+import type { Playback } from "../lib/playback";
+import { PdfPage } from "./PdfPage";
+
+export type AnnotationDraft = {
+  quote: string;
+  chapter: number;
+  page: number;
+  time: number;
+  segment: number;
+  offset: number;
+  endSegment: number;
+  endOffset: number;
+};
+type Props = {
+  p: Playback;
+  addMark: (location?: Partial<Bookmark>) => void;
+  notes: ReaderNote[];
+  onAnnotate: (draft: AnnotationDraft, kind: "note" | "highlight") => void;
+  theme: string;
+  onTheme: (theme: string) => void;
+  offline: () => void;
+  offlineLabel: string;
+  isOffline: boolean;
+};
+function markedText(fragment: ReadingFragment, notes: ReaderNote[]) {
+  return readingHighlights(fragment, notes).map((part, i) =>
+    part.highlighted ? <mark key={i}>{part.text}</mark> : part.text,
+  );
+}
+
+export default function BookReader({
+  p,
+  addMark,
+  notes,
+  onAnnotate,
+  theme,
+  onTheme,
+  offline,
+  offlineLabel,
+  isOffline,
+}: Props) {
+  const {
+    storage: { readSaved, writeSaved },
+  } = useAccount();
+  const book = p.book!,
+    audioChapter = book.chapters[p.chapter];
+  const audioIndex = segmentAt(audioChapter.segments, p.time);
+  const initialPlace = readSaved<Progress | null>(
+    "progress." + book.id,
+    null,
+  )?.reading;
+  const [follow, setFollow] = useState(
+    readSaved("follow." + book.id, !initialPlace),
+  );
+  const [appearance, setAppearance] = useState(() =>
+    readingAppearance(readSaved("reading.appearance", null)),
+  );
+  const [anchor, setAnchor] = useState<ReadingAnchor>(() =>
+    initialPlace &&
+    Number.isInteger(initialPlace.chapter) &&
+    initialPlace.chapter >= 0 &&
+    initialPlace.chapter < book.chapters.length
+      ? initialPlace
+      : { chapter: p.chapter, segment: Math.max(0, audioIndex), offset: 0 },
+  );
+  const readingChapter = clamp(anchor.chapter, 0, book.chapters.length - 1),
+    chapter = book.chapters[readingChapter];
+  const previousReadingChapter = useRef(readingChapter);
+  const activeIndex = readingChapter === p.chapter ? audioIndex : -1;
+  const [mode, setMode] = useState<"text" | "pdf">(() => {
+    const saved = readSaved(
+      "view." + book.id,
+      chapter.segments.length ? "text" : "pdf",
+    );
+    return saved === "pdf" || !chapter.segments.length ? "pdf" : "text";
+  });
+  const [size, setSize] = useState({ width: 650, height: 560 });
+  const [focus, setFocus] = useState(false),
+    [selection, setSelection] = useState<AnnotationDraft | null>(null);
+  const paper = useRef<HTMLDivElement>(null),
+    prose = useRef<HTMLElement>(null),
+    touch = useRef<{ x: number; y: number } | null>(null);
+  const budget = readingWordBudget(
+    size.width,
+    size.height,
+    appearance.size,
+    appearance.leading,
+  );
+  const pages = useMemo(
+    () => paginateReading(chapter.segments, budget),
+    [chapter.segments, budget],
+  );
+  const pageIndex = readingPageAt(pages, anchor.segment, anchor.offset);
+  const visible = pages[pageIndex];
+  const chapterNotes = notes.filter(
+    (n) => n.bookId === book.id && n.chapter === readingChapter,
+  );
+  useEffect(() => {
+    const el = paper.current;
+    if (!el) return;
+    const resize = () =>
+      setSize({ width: el.clientWidth, height: el.clientHeight });
+    const observer = new ResizeObserver(resize);
+    observer.observe(el);
+    resize();
+    return () => observer.disconnect();
+  }, [mode, appearance.width]);
+  const spoken = audioChapter.segments[audioIndex];
+  const spokenOffset = spoken
+    ? Math.min(
+        spoken.text.length - 1,
+        Math.max(
+          0,
+          Math.floor(
+            ((p.time - spoken.start) /
+              Math.max(0.01, spoken.end - spoken.start)) *
+              spoken.text.length,
+          ),
+        ),
+      )
+    : 0;
+  const narratorPage = readingPageAt(
+    pages,
+    Math.max(0, audioIndex),
+    spokenOffset,
+  );
+  useEffect(() => {
+    if (follow) {
+      setAnchor({
+        chapter: p.chapter,
+        segment: Math.max(0, audioIndex),
+        offset: spokenOffset,
+      });
+      p.setPage(spoken?.page || audioChapter.firstPage || 1);
+    }
+  }, [p.chapter, audioIndex, narratorPage, follow]);
+  useEffect(() => {
+    if (!chapter.segments.length) {
+      setMode("pdf");
+      if (previousReadingChapter.current !== readingChapter)
+        p.setPage(chapter.firstPage || 1);
+    }
+    previousReadingChapter.current = readingChapter;
+  }, [readingChapter, chapter.segments]);
+  useEffect(() => {
+    writeSaved("view." + book.id, mode);
+    writeSaved("follow." + book.id, follow);
+  }, [book.id, mode, follow]);
+  useEffect(() => {
+    writeSaved("reading.appearance", appearance);
+  }, [appearance]);
+  useEffect(() => {
+    setAppearance((a) => ({
+      ...a,
+      surface:
+        theme === "night"
+          ? "night"
+          : a.surface === "night"
+            ? "paper"
+            : a.surface,
+    }));
+  }, [theme]);
+  useEffect(() => {
+    document.body.classList.toggle("focus-reading", focus);
+    return () => document.body.classList.remove("focus-reading");
+  }, [focus]);
+  useEffect(() => {
+    paper.current?.scrollTo({ top: 0 });
+    setSelection(null);
+  }, [pageIndex, readingChapter]);
+  function remember(next: ReadingAnchor) {
+    setAnchor(next);
+    const old = readSaved<Progress | null>("progress." + book.id, null);
+    writeSaved("progress." + book.id, {
+      ...old,
+      chapter: p.chapter,
+      time: p.time,
+      page: p.page,
+      reading: next,
+      updated: Date.now(),
+    });
+  }
+  function turn(direction: number) {
+    setFollow(false);
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+    if (mode === "pdf") {
+      p.setPage(clamp(p.page + direction, 1, book.pageCount));
+      return;
+    }
+    const next = pageIndex + direction;
+    if (next >= 0 && next < pages.length)
+      remember(readingAnchorAt(pages, next, readingChapter));
+    else if (
+      readingChapter + direction >= 0 &&
+      readingChapter + direction < book.chapters.length
+    ) {
+      const target = readingChapter + direction,
+        segs = book.chapters[target].segments,
+        last = Math.max(0, segs.length - 1);
+      remember({
+        chapter: target,
+        segment: direction < 0 ? last : 0,
+        offset:
+          direction < 0 ? Math.max(0, (segs[last]?.text.length || 1) - 1) : 0,
+      });
+    }
+  }
+
+  const first = visible?.fragments[0];
+  function bookmark() {
+    if (mode === "pdf" || !first) {
+      addMark();
+      return;
+    }
+    const seg = chapter.segments[first.segment];
+    addMark({
+      chapter: readingChapter,
+      time: seg.start,
+      page: seg.page,
+      text: first.text,
+      reading: readingAnchorAt(pages, pageIndex, readingChapter),
+    } as Partial<Bookmark>);
+  }
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (
+        document.querySelector("dialog[open]") ||
+        (e.target as HTMLElement).closest(
+          "input,textarea,select,[contenteditable=true],.appearance-menu",
+        )
+      )
+        return;
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        turn(e.key === "ArrowRight" ? 1 : -1);
+      }
+      if (e.key.toLowerCase() === "b" && !e.ctrlKey && !e.metaKey) bookmark();
+    };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  });
+  function chooseSurface(surface: ReadingAppearance["surface"]) {
+    setAppearance((a) => ({ ...a, surface }));
+    onTheme(surface === "night" ? "night" : "paper");
+  }
+  function captureSelection() {
+    const s = window.getSelection();
+    if (!s || s.isCollapsed || !s.rangeCount || !prose.current) {
+      setSelection(null);
+      return;
+    }
+    const range = s.getRangeAt(0);
+    if (
+      !prose.current.contains(range.startContainer) ||
+      !prose.current.contains(range.endContainer)
+    )
+      return;
+    const part = (node: Node, offset: number) => {
+      const el = (
+        node.nodeType === Node.ELEMENT_NODE
+          ? (node as Element)
+          : node.parentElement
+      )?.closest<HTMLElement>("[data-fragment]");
+      if (!el) return null;
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.setEnd(node, offset);
+      return {
+        segment: Number(el.dataset.segment),
+        offset: Number(el.dataset.start) + r.toString().length,
+      };
+    };
+    const start = part(range.startContainer, range.startOffset),
+      end = part(range.endContainer, range.endOffset);
+    const quote = s.toString().trim();
+    if (!start || !end || !quote || quote.length > 2000) {
+      setSelection(null);
+      return;
+    }
+    const seg = chapter.segments[start.segment];
+    setFollow(false);
+    setSelection({
+      quote,
+      chapter: readingChapter,
+      page: seg.page,
+      time: seg.start,
+      segment: start.segment,
+      offset: start.offset,
+      endSegment: end.segment,
+      endOffset: end.offset,
+    });
+  }
+  const previousDisabled =
+    mode === "pdf" ? p.page <= 1 : pageIndex === 0 && readingChapter === 0;
+  const nextDisabled =
+    mode === "pdf"
+      ? p.page >= book.pageCount
+      : pageIndex >= pages.length - 1 &&
+        readingChapter === book.chapters.length - 1;
+  return (
+    <section
+      className="ebook-reader"
+      data-surface={appearance.surface}
+      data-width={appearance.width}
+      aria-label="Interactive book reader"
+    >
+      <div className="ebook-heading">
+        <div>
+          <p className="eyebrow">YOUR READING ROOM</p>
+          <h1>{book.title}</h1>
+          <p>
+            {book.title} <span>·</span> Chapter {readingChapter + 1} of{" "}
+            {book.chapters.length}
+          </p>
+        </div>
+        <div className="ebook-actions">
+          <button
+            className="icon-button"
+            aria-label="Bookmark this moment"
+            title="Bookmark this moment"
+            onClick={bookmark}
+          >
+            <BookmarkSimple />
+          </button>
+          <button
+            className="icon-button"
+            aria-label={focus ? "Leave focused reading" : "Focus on reading"}
+            aria-pressed={focus}
+            onClick={() => setFocus(!focus)}
+          >
+            <ArrowsOut />
+          </button>
+        </div>
+      </div>
+      <div className="ebook-tools">
+        <div className="view-switch" aria-label="Reading view">
+          <button
+            aria-pressed={mode === "text"}
+            className={mode === "text" ? "active" : ""}
+            onClick={() => setMode("text")}
+            disabled={!chapter.segments.length}
+          >
+            <BookOpen size={16} />
+            Reading
+          </button>
+          <button
+            aria-pressed={mode === "pdf"}
+            className={mode === "pdf" ? "active" : ""}
+            onClick={() => setMode("pdf")}
+          >
+            <FilePdf size={16} />
+            Original PDF
+          </button>
+        </div>
+        <div className="ebook-tool-actions">
+          <button
+            className={`ebook-follow ${follow ? "is-following" : ""}`}
+            aria-label={follow ? "Following audio" : "Follow audio"}
+            aria-pressed={follow}
+            disabled={!chapter.segments.length}
+            onClick={() => setFollow(!follow)}
+          >
+            <Headphones size={16} />
+            <span>{follow ? "Following audio" : "Follow audio"}</span>
+          </button>
+          <details className="appearance-menu">
+            <summary aria-label="Reading appearance">
+              <TextAa size={23} />
+              <span>Appearance</span>
+            </summary>
+            <div className="appearance-panel">
+              <h2>Make yourself comfortable.</h2>
+              <p>Set the page to your pace.</p>
+              <div className="appearance-size">
+                <span>Text size</span>
+                <button
+                  aria-label="Smaller text"
+                  disabled={appearance.size <= 17}
+                  onClick={() =>
+                    setAppearance((a) => ({ ...a, size: a.size - 1 }))
+                  }
+                >
+                  A−
+                </button>
+                <output aria-label="Reading text size">
+                  {appearance.size}
+                </output>
+                <button
+                  aria-label="Larger text"
+                  disabled={appearance.size >= 32}
+                  onClick={() =>
+                    setAppearance((a) => ({ ...a, size: a.size + 1 }))
+                  }
+                >
+                  A+
+                </button>
+              </div>
+              <fieldset>
+                <legend>Typeface</legend>
+                <div>
+                  {(["serif", "sans"] as const).map((font) => (
+                    <button
+                      key={font}
+                      aria-pressed={appearance.font === font}
+                      onClick={() => setAppearance((a) => ({ ...a, font }))}
+                    >
+                      {font === "serif" ? "Book serif" : "Clean sans"}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Line spacing</legend>
+                <div>
+                  {[1.5, 1.75, 2].map((leading, i) => (
+                    <button
+                      key={leading}
+                      aria-pressed={appearance.leading === leading}
+                      onClick={() => setAppearance((a) => ({ ...a, leading }))}
+                    >
+                      {["Compact", "Comfort", "Airy"][i]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Page width</legend>
+                <div>
+                  {(["comfortable", "wide"] as const).map((width) => (
+                    <button
+                      key={width}
+                      aria-pressed={appearance.width === width}
+                      onClick={() => setAppearance((a) => ({ ...a, width }))}
+                    >
+                      {width === "wide" ? "Wide" : "Comfortable"}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Page colour</legend>
+                <div>
+                  {(["paper", "sepia", "night"] as const).map((surface) => (
+                    <button
+                      className={`surface-${surface}`}
+                      key={surface}
+                      aria-pressed={appearance.surface === surface}
+                      onClick={() => chooseSurface(surface)}
+                    >
+                      {surface[0].toUpperCase() + surface.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+          </details>
+          <button
+            className="icon-button ebook-download"
+            aria-label={offlineLabel}
+            title={offlineLabel}
+            onClick={offline}
+            disabled={
+              offlineLabel.startsWith("Saving") ||
+              offlineLabel.startsWith("Starting")
+            }
+            aria-pressed={isOffline}
+          >
+            <DownloadSimple />
+          </button>
+        </div>
+      </div>
+      {mode === "pdf" ? (
+        <div className="reading-page pdf-page">
+          <PdfPage url={book.pdf} page={p.page} />
+        </div>
+      ) : (
+        <div
+          className="ebook-paper"
+          ref={paper}
+          onMouseUp={captureSelection}
+          onKeyUp={captureSelection}
+          onTouchStart={(e) => {
+            touch.current = {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY,
+            };
+          }}
+          onTouchEnd={(e) => {
+            const t = touch.current;
+            touch.current = null;
+            if (!t || window.getSelection()?.toString()) return;
+            const dx = e.changedTouches[0].clientX - t.x,
+              dy = e.changedTouches[0].clientY - t.y;
+            if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.7)
+              turn(dx < 0 ? 1 : -1);
+            else captureSelection();
+          }}
+        >
+          <header className="ebook-running-head">
+            <span>{book.title}</span>
+            <Leaf size={16} />
+          </header>
+          <article
+            ref={prose}
+            className={`ebook-prose font-${appearance.font}`}
+            aria-label="Book text"
+            style={
+              {
+                fontSize: appearance.size,
+                lineHeight: appearance.leading,
+              } as CSSProperties
+            }
+          >
+            {pageIndex === 0 && (
+              <div className="ebook-chapter-opening">
+                <span>
+                  CHAPTER {String(readingChapter + 1).padStart(2, "0")}
+                </span>
+                <h2>{chapter.title}</h2>
+                <div />
+              </div>
+            )}
+            {visible?.fragments.map((f) => (
+              <p
+                key={`${f.segment}-${f.start}`}
+                className={`passage ebook-passage ${f.heading ? "passage-heading" : ""} ${f.segment === activeIndex ? "spoken" : ""}`}
+                aria-current={f.segment === activeIndex ? "true" : undefined}
+              >
+                <button
+                  className="passage-listen"
+                  aria-label={`Listen from: ${f.text.slice(0, 95)}`}
+                  title="Listen from here"
+                  onClick={() => {
+                    p.load(
+                      readingChapter,
+                      chapter.segments[f.segment].start,
+                      true,
+                    );
+                    setFollow(true);
+                  }}
+                >
+                  <Play size={13} weight="fill" />
+                </button>
+                <span
+                  data-fragment="true"
+                  data-segment={f.segment}
+                  data-start={f.start}
+                >
+                  {markedText(f, chapterNotes)}
+                </span>
+              </p>
+            ))}
+            {pageIndex === pages.length - 1 && (
+              <div
+                className="ebook-chapter-ending"
+                role="separator"
+                aria-label={
+                  readingChapter === book.chapters.length - 1
+                    ? "End of book"
+                    : "End of chapter"
+                }
+              >
+                <span />
+                <Leaf size={18} />
+                <span />
+              </div>
+            )}
+          </article>
+          <footer className="ebook-running-foot">
+            <span>PAGECHIME</span>
+            <span>{pageIndex + 1}</span>
+          </footer>
+        </div>
+      )}
+      {selection && (
+        <div
+          className="quotation-actions"
+          role="region"
+          aria-label="Selected quotation"
+        >
+          <p>“{selection.quote}”</p>
+          <div>
+            <button
+              onClick={() => {
+                onAnnotate(selection, "highlight");
+                setSelection(null);
+                window.getSelection()?.removeAllRanges();
+              }}
+            >
+              <Highlighter size={18} />
+              Highlight
+            </button>
+            <button
+              onClick={() => {
+                onAnnotate(selection, "note");
+                setSelection(null);
+              }}
+            >
+              <NotePencil size={18} />
+              Add note
+            </button>
+            <button
+              className="icon-button"
+              aria-label="Dismiss selection"
+              onClick={() => {
+                setSelection(null);
+                window.getSelection()?.removeAllRanges();
+              }}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+      )}
+      <nav
+        className="ebook-page-navigation"
+        aria-label={mode === "pdf" ? "PDF pages" : "Reading pages"}
+      >
+        <button
+          className="ebook-page-turn"
+          aria-label={
+            mode === "pdf" ? "Previous PDF page" : "Previous reading page"
+          }
+          disabled={previousDisabled}
+          onClick={() => turn(-1)}
+        >
+          <ArrowLeft size={19} />
+          <span>Previous</span>
+        </button>
+        <div className="ebook-page-status">
+          {mode === "pdf" ? (
+            <label>
+              Page{" "}
+              <input
+                aria-label="PDF page number"
+                type="number"
+                min={1}
+                max={book.pageCount}
+                value={p.page}
+                onChange={(e) => {
+                  setFollow(false);
+                  p.setPage(clamp(Number(e.target.value), 1, book.pageCount));
+                }}
+              />{" "}
+              of {book.pageCount}
+            </label>
+          ) : (
+            <>
+              <span aria-live="polite">
+                Page {pageIndex + 1} of {Math.max(1, pages.length)}
+              </span>
+              <small>
+                in this chapter ·{" "}
+                {readingProgress(
+                  book.chapters,
+                  readingAnchorAt(pages, pageIndex, readingChapter),
+                )}
+                % through the book
+              </small>
+            </>
+          )}
+        </div>
+        <button
+          className="ebook-page-turn"
+          aria-label={mode === "pdf" ? "Next PDF page" : "Next reading page"}
+          disabled={nextDisabled}
+          onClick={() => turn(1)}
+        >
+          <span>Next</span>
+          <ArrowRight size={19} />
+        </button>
+      </nav>
+      {!follow && mode === "text" && (
+        <button className="ebook-resume" onClick={() => setFollow(true)}>
+          <Headphones size={16} />
+          Return to the narrator
+          <ArrowRight size={15} />
+        </button>
+      )}
+      {mode === "text" && first && (
+        <div className="ebook-tip">
+          <span>Select a sentence to keep it.</span>
+          <button
+            onClick={() => {
+              const f = first,
+                s = chapter.segments[f.segment];
+              onAnnotate(
+                {
+                  quote: f.text.slice(0, 2000),
+                  chapter: readingChapter,
+                  page: s.page,
+                  time: s.start,
+                  segment: f.segment,
+                  offset: f.start,
+                  endSegment: f.segment,
+                  endOffset: Math.min(f.end, f.start + 2000),
+                },
+                "note",
+              );
+            }}
+          >
+            <NotePencil size={16} />
+            Make a note
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}

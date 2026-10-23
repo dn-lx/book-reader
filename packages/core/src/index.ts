@@ -37,6 +37,7 @@ export type Progress = {
   updated: number;
   view?: "text" | "pdf";
   follow?: boolean;
+  reading?: import("./reading").ReadingAnchor;
 };
 export type Bookmark = {
   id: string;
@@ -46,6 +47,7 @@ export type Bookmark = {
   page: number;
   text: string;
   created: number;
+  reading?: import("./reading").ReadingAnchor;
 };
 export const palette = {
   background: "#f5f3ec",
@@ -203,4 +205,6 @@ export function validateBook(value: unknown): Book {
   };
 }
 
-export * from './reader-account';
+export * from "./reader-account";
+
+export * from "./reading";

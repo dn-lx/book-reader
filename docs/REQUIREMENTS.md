@@ -36,7 +36,7 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 
 ## [ ] REQ-006 — Netlify development delivery
 - Deploy from the existing dev integration branch; keep prod release paused.
-- Use Netlify team don-alex-perera and site pagechime-dev; preserve privacy until app access is enforced.
+- Use Netlify team don-alex-perera and site pagechime; preserve privacy until app access is enforced.
 - Verify a real ready deploy, source revision, assets and access controls; report any necessary account connection action precisely.
 
 ## [ ] REQ-007 — Me+ standalone reader accounts and personal notes
@@ -52,8 +52,21 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 
 ## [x] REQ-008 — Pagechime identity and one development environment
 - Use Pagechime in website/mobile wordmarks, titles, install metadata, workspace packages and maintained project documentation.
-- Rename the existing Netlify project in place to pagechime-dev; retain dev as the single integration branch and keep production paused.
+- Rename the existing Netlify project in place to pagechime; retain dev as the single integration branch and keep production paused.
 - Rename the existing GitHub repository to dn-lx/pagechime without creating another repository; verify its canonical name before changing source-control bindings.
 - Preserve existing accounts, notes/bookmarks, pending logout and account-scoped offline data. Keep deployed API/database and native application identities stable.
 - Acceptance: web/native checks and exports, desktop/mobile visual verification, independent review and readback of external identities/privacy settings.
 - Plan: docs/plans/REQ-008-pagechime.md. Netlify and GitHub canonical names/unchanged IDs and privacy/PR continuity are verified. Types,14 unit tests,93 starter checks,22 browser checks, both full-content native exports and web budget pass; desktop/mobile branding was inspected, including320–1440px wordmark geometry. Independent review found no blocker. No duplicate development site was created.
+
+
+## [x] REQ-009 — Interactive book reading
+- Default to a reflowable Kindle-style text reader for timed books; original PDF is optional.
+- Turn reading pages with touch/buttons/keyboard, retain place independently of PDF pagination, and preserve text through font/viewport changes.
+- Offer readable serif/sans typography, text size, line spacing, page width, paper/sepia/night surfaces, focus mode and reduced-motion transitions.
+- Follow narrated passages; manual page turns pause following without losing audio position. Resume following explicitly.
+- Readers can select a quotation, highlight it or attach a note. Notes/highlights and reading place stay account-specific and sync through the existing API.
+- Web and Expo share pagination/anchor semantics; preserve the full Manifest text and existing audio, imports, accounts, notes and bookmarks.
+- Acceptance: meaningful pagination/anchor tests, desktop/mobile browser reading/selection/appearance/persistence tests, accessibility and inspected runtime screenshots, web/native exports and performance checks. Native device/signing limitations remain explicit.
+- Plan: docs/plans/REQ-009-ebook-reading.md. Continue single Netlify project ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, now named pagechime by the owner; dev remains integration and prod stays paused.
+
+REQ-009 evidence: PR #4;20 unit/contracts,36 browser cases (22 existing and14 new), both full-content native exports, Next/types,93 starter checks,556/900KiB budget and independent review. Full Manifest is lossless across four reading layouts; real opening/ending screenshots were inspected on desktop/mobile. See docs/PAGECHIME-VERIFICATION.md for native/hosting limits. Netlify deployment and positive hosted account/media checks remain REQ-004/006/007.

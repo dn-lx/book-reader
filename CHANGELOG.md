@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-Renamed the product to Pagechime across website/mobile branding, install labels, workspace packages and project guidance. Renamed the existing Netlify development project in place to pagechime-dev; kept one development environment, existing storage namespaces and native application IDs. The existing GitHub repository is now dn-lx/pagechime.
+Added an interactive text reader for web and Expo with reflowable pages, typography/paper/sepia/night controls, exact quotation notes/highlights and reading anchors independent of narration. Original PDF remains available; synced reading places and manual PDF pages restore correctly. Intended version impact: next minor release (0.2.0).
+
+Renamed the product to Pagechime across website/mobile branding, install labels, workspace packages and project guidance. Renamed the existing Netlify development project in place to pagechime; kept one development environment, existing storage namespaces and native application IDs. The existing GitHub repository is now dn-lx/pagechime.
 
 Added standalone Me+ username/password accounts, invitation/admin access controls, private notes, account-scoped bookmarks/progress and offline sync; Next/Expo sign-in and logout; server-side sessions and protected Netlify media/API configuration. Development deployment awaits Netlify CLI/network setup. Intended version impact: next minor release (0.2.0); no production release made.
 

@@ -13,6 +13,12 @@ export type ReaderNote = {
   time: number;
   body: string;
   created: number;
+  quote?: string;
+  segment?: number;
+  offset?: number;
+  endSegment?: number;
+  endOffset?: number;
+  kind?: "note" | "highlight";
 };
 export type CloudItem = {
   key: string;

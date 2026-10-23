@@ -66,7 +66,7 @@ import { type ReaderNote } from "@pagechime/core";
 import AccountPanel from "./AccountPanel";
 import { usePlayback, type Playback } from "../lib/playback";
 import { pdfLibrary } from "../lib/pdf";
-import { PdfPage } from "./PdfPage";
+import Reader, { type AnnotationDraft } from "./BookReader";
 const spring = { type: "spring" as const, stiffness: 280, damping: 30 };
 function IconButton({
   label,
@@ -186,6 +186,7 @@ export default function ReaderApp() {
     readSaved("notes", []),
   );
   const [noteText, setNoteText] = useState("");
+  const [noteDraft, setNoteDraft] = useState<AnnotationDraft | null>(null);
   const [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
   const [books, setBooks] = useState<Book[]>([]),
     [boot, setBoot] = useState(true),
@@ -304,24 +305,31 @@ export default function ReaderApp() {
     },
     [p.open],
   );
-  const addMark = useCallback(() => {
-    if (!p.book) return;
-    const ch = p.book.chapters[p.chapter],
-      seg = ch.segments[segmentAt(ch.segments, p.time)];
-    const mark: Bookmark = {
-      id: crypto.randomUUID(),
-      bookId: p.book.id,
-      chapter: p.chapter,
-      time: p.time,
-      page: p.page,
-      text: seg?.text || ch.title,
-      created: Date.now(),
-    };
-    const next = [mark, ...bookmarks];
-    setBookmarks(next);
-    writeSaved("bookmarks", next);
-    notify("A little bookmark, right here.");
-  }, [p.book, p.chapter, p.time, p.page, bookmarks, notify]);
+  const addMark = useCallback(
+    (location?: Partial<Bookmark>) => {
+      if (!p.book) return;
+      const ch = p.book.chapters[p.chapter],
+        seg = ch.segments[segmentAt(ch.segments, p.time)];
+      const mark: Bookmark = {
+        id: crypto.randomUUID(),
+        bookId: p.book.id,
+        chapter: p.chapter,
+        time: p.time,
+        page: p.page,
+        text: seg?.text || ch.title,
+        created: Date.now(),
+        ...location,
+      };
+      const next = [mark, ...bookmarks];
+      if (!writeSaved("bookmarks", next)) {
+        notify("Your bookmark could not be saved. Please try again.");
+        return;
+      }
+      setBookmarks(next);
+      notify("A little bookmark, right here.");
+    },
+    [p.book, p.chapter, p.time, p.page, bookmarks, notify],
+  );
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -340,13 +348,7 @@ export default function ReaderApp() {
       if (e.code === "Space") {
         e.preventDefault();
         p.toggle();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        p.skip(15);
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        p.skip(-15);
-      } else if (e.key.toLowerCase() === "b") addMark();
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -499,7 +501,9 @@ export default function ReaderApp() {
                   aria-current={i === p.chapter ? "true" : undefined}
                   className={i === p.chapter ? "current" : ""}
                   onClick={() => {
+                    writeSaved("follow." + p.book!.id, true);
                     p.load(i, 0, p.playing);
+                    setReaderKey((k) => k + 1);
                     setDrawer(false);
                   }}
                 >
@@ -527,7 +531,19 @@ export default function ReaderApp() {
                     <div className="mark" key={m.id}>
                       <button
                         onClick={() => {
-                          writeSaved("view." + m.bookId, "pdf");
+                          writeSaved(
+                            "view." + m.bookId,
+                            m.reading ? "text" : "pdf",
+                          );
+                          if (m.reading)
+                            writeSaved("progress." + m.bookId, {
+                              ...readSaved("progress." + m.bookId, {}),
+                              chapter: m.chapter,
+                              time: m.time,
+                              page: m.page,
+                              reading: m.reading,
+                              updated: Date.now(),
+                            });
                           writeSaved("follow." + m.bookId, false);
                           p.load(m.chapter, m.time, false);
                           p.setPage(m.page);
@@ -643,6 +659,7 @@ export default function ReaderApp() {
             setModal("");
             setEditingNote(null);
             setNoteText("");
+            setNoteDraft(null);
           }}
           wide
         >
@@ -662,16 +679,30 @@ export default function ReaderApp() {
                       time: p.time,
                       body: noteText.trim(),
                       created: Date.now(),
+                      ...(noteDraft || {}),
+                      kind: "note",
                     };
                 const next = [n, ...notes.filter((x) => x.id !== n.id)];
-                writeSaved("notes", next);
+                if (!writeSaved("notes", next)) {
+                  notify(
+                    "Your note could not be saved. Your text is still here.",
+                  );
+                  return;
+                }
                 setNotes(next);
                 setNoteText("");
                 setEditingNote(null);
+                setNoteDraft(null);
                 notify("Your thought has been saved.");
               }}
               className="note-form"
             >
+              {typeof (noteDraft?.quote || editingNote?.quote) === "string" &&
+                (noteDraft?.quote || editingNote?.quote) && (
+                  <blockquote className="note-quotation">
+                    {noteDraft?.quote || editingNote?.quote}
+                  </blockquote>
+                )}
               <label>
                 {editingNote ? "Edit your note" : `A note on page ${p.page}`}
                 <textarea
@@ -707,6 +738,16 @@ export default function ReaderApp() {
                     {books.find((b) => b.id === n.bookId)?.title || "Your book"}{" "}
                     · Page {n.page}
                   </small>
+                  {typeof n.quote === "string" &&
+                    n.quote &&
+                    n.kind !== "highlight" && (
+                      <blockquote className="note-quotation">
+                        {n.quote}
+                      </blockquote>
+                    )}
+                  {n.kind === "highlight" && (
+                    <span className="note-kind">HIGHLIGHT</span>
+                  )}
                   <p>{n.body}</p>
                   <div>
                     <button
@@ -716,6 +757,23 @@ export default function ReaderApp() {
                           open(b);
                           p.load(n.chapter, n.time, false, b);
                           p.setPage(n.page);
+                          if (n.segment !== undefined) {
+                            writeSaved("view." + n.bookId, "text");
+                            writeSaved("follow." + n.bookId, false);
+                            writeSaved("progress." + n.bookId, {
+                              ...readSaved("progress." + n.bookId, {}),
+                              chapter: n.chapter,
+                              time: n.time,
+                              page: n.page,
+                              reading: {
+                                chapter: n.chapter,
+                                segment: n.segment,
+                                offset: n.offset || 0,
+                              },
+                              updated: Date.now(),
+                            });
+                          }
+                          setReaderKey((k) => k + 1);
                           setModal("");
                         }
                       }}
@@ -814,6 +872,35 @@ export default function ReaderApp() {
                   key={p.book.id + readerKey}
                   p={p}
                   addMark={addMark}
+                  notes={notes}
+                  theme={theme}
+                  onTheme={setTheme}
+                  onAnnotate={(draft, kind) => {
+                    if (kind === "note") {
+                      setNoteDraft(draft);
+                      setEditingNote(null);
+                      setNoteText("");
+                      setModal("notes");
+                      return;
+                    }
+                    const highlight: ReaderNote = {
+                      id: crypto.randomUUID(),
+                      bookId: p.book!.id,
+                      body: draft.quote,
+                      created: Date.now(),
+                      kind,
+                      ...draft,
+                    };
+                    const next = [highlight, ...notes];
+                    if (!writeSaved("notes", next)) {
+                      notify(
+                        "Your highlight could not be saved. Please try again.",
+                      );
+                      return;
+                    }
+                    setNotes(next);
+                    notify("A sentence to keep. Highlight saved.");
+                  }}
                   offline={() => offline(p.book!)}
                   offlineLabel={
                     offlineBusy ||
@@ -1087,7 +1174,9 @@ export default function ReaderApp() {
             onClose={() => setModal("")}
             onSelect={(b, i, t) => {
               p.open(b);
+              writeSaved("follow." + b.id, true);
               p.load(i, t, false, b);
+              setReaderKey((k) => k + 1);
               setReading(true);
               setModal("");
               setDrawer(false);
@@ -1162,15 +1251,16 @@ export default function ReaderApp() {
                 narrator.
               </p>
               <p>
-                Click a passage to listen from there. Add bookmarks for thoughts
-                you want to return to.
+                Use a passage’s play button to listen from there. Select text to
+                highlight or make a note. Add bookmarks for thoughts you want to
+                return to.
               </p>
               <div className="shortcut-list">
                 <span>
                   Play / pause<kbd>Space</kbd>
                 </span>
                 <span>
-                  Back / forward 15 seconds<kbd>← / →</kbd>
+                  Previous / next reading page<kbd>← / →</kbd>
                 </span>
                 <span>
                   Bookmark this moment<kbd>B</kbd>
@@ -1214,296 +1304,6 @@ export default function ReaderApp() {
         )}
       </div>
     </MotionConfig>
-  );
-}
-function Reader({
-  p,
-  addMark,
-  offline,
-  offlineLabel,
-  isOffline,
-}: {
-  p: Playback;
-  addMark: () => void;
-  offline: () => void;
-  offlineLabel: string;
-  isOffline: boolean;
-}) {
-  const {
-    storage: { readSaved, writeSaved, putLocalBook },
-  } = useAccount();
-  const b = p.book!,
-    ch = b.chapters[p.chapter],
-    idx = segmentAt(ch.segments, p.time),
-    active = ch.segments[idx],
-    reduced = useReducedMotion();
-  const [mode, setMode] = useState<"text" | "pdf">(
-      readSaved("view." + b.id, ch.segments.length ? "text" : "pdf"),
-    ),
-    [follow, setFollow] = useState(readSaved("follow." + b.id, true)),
-    [size, setSize] = useState(21),
-    [focus, setFocus] = useState(false),
-    [pdfText, setPdfText] = useState("");
-  const page = p.page,
-    setPage = p.setPage;
-  const refs = useRef<Map<number, HTMLParagraphElement>>(new Map());
-  useEffect(() => {
-    writeSaved("view." + b.id, mode);
-    writeSaved("follow." + b.id, follow);
-  }, [mode, follow, b.id]);
-  useEffect(() => {
-    setSize(readSaved("textSize", 21));
-  }, []);
-  useEffect(() => {
-    if (!ch.segments.length) setMode("pdf");
-  }, [p.chapter, ch]);
-  useEffect(() => {
-    if (!follow || !active) return;
-    setPage(active.page);
-    if (mode === "text")
-      refs.current.get(idx)?.scrollIntoView({
-        behavior: reduced ? "instant" : "smooth",
-        block: "center",
-      });
-  }, [idx, follow, mode, active, reduced]);
-  useEffect(() => {
-    document.body.classList.toggle("focus-reading", focus);
-    return () => document.body.classList.remove("focus-reading");
-  }, [focus]);
-  function turn(value: number) {
-    setFollow(false);
-    setMode("pdf");
-    setPage(clamp(value, 1, b.pageCount));
-  }
-  function listenPage() {
-    for (let i = 0; i < b.chapters.length; i++) {
-      const s = b.chapters[i].segments.find((x) => x.page === page);
-      if (s) {
-        p.load(i, s.start, true);
-        setFollow(true);
-        return;
-      }
-    }
-  }
-  return (
-    <>
-      <div className="reader-heading">
-        <div>
-          <button
-            className="small-back"
-            onClick={() => {
-              if (p.chapter > 0) p.load(p.chapter - 1, 0, p.playing);
-            }}
-            disabled={p.chapter === 0}
-          >
-            <ArrowLeft size={14} />
-            Previous chapter
-          </button>
-          <p className="eyebrow">
-            {String(p.chapter + 1).padStart(2, "0")} /{" "}
-            {String(b.chapters.length).padStart(2, "0")} CHAPTERS
-          </p>
-          <h1>{ch.title}</h1>
-          <p className="reader-byline">
-            {b.title}
-            <span>·</span>
-            {b.author}
-          </p>
-        </div>
-        <div className="reader-heading-actions">
-          <IconButton label="Bookmark this moment" onClick={addMark}>
-            <BookmarkSimple />
-          </IconButton>
-          <IconButton
-            label={focus ? "Leave focused reading" : "Focus on reading"}
-            active={focus}
-            onClick={() => setFocus(!focus)}
-          >
-            <ArrowsOut />
-          </IconButton>
-        </div>
-      </div>
-      <div className="reading-toolbar">
-        <div className="view-switch" aria-label="Reading view">
-          <button
-            onClick={() => setMode("text")}
-            className={mode === "text" ? "active" : ""}
-          >
-            <BookOpen size={16} />
-            Reading
-          </button>
-          <button
-            onClick={() => setMode("pdf")}
-            className={mode === "pdf" ? "active" : ""}
-          >
-            <FilePdf size={16} />
-            Original PDF
-          </button>
-        </div>
-        <div className="toolbar-right">
-          <div className="text-size">
-            <IconButton
-              label="Smaller text"
-              disabled={size <= 17}
-              onClick={() => {
-                setSize(size - 2);
-                writeSaved("textSize", size - 2);
-              }}
-            >
-              <Minus size={14} />
-            </IconButton>
-            <TextAa size={19} />
-            <IconButton
-              label="Larger text"
-              disabled={size >= 29}
-              onClick={() => {
-                setSize(size + 2);
-                writeSaved("textSize", size + 2);
-              }}
-            >
-              <Plus size={14} />
-            </IconButton>
-          </div>
-          <button
-            className={`follow-button ${follow ? "on" : ""}`}
-            aria-pressed={follow}
-            onClick={() => setFollow(!follow)}
-            disabled={!ch.segments.length}
-          >
-            <span className="follow-dot" />
-            Follow audio
-          </button>
-          <IconButton
-            label={offlineLabel}
-            onClick={offline}
-            active={isOffline}
-            disabled={
-              offlineLabel.startsWith("Saving") ||
-              offlineLabel.startsWith("Starting")
-            }
-          >
-            <DownloadSimple />
-          </IconButton>
-        </div>
-      </div>
-      <div
-        className={`reading-page ${mode === "pdf" ? "pdf-page" : ""}`}
-        onWheel={() => {
-          if (follow) setFollow(false);
-        }}
-        onTouchMove={() => {
-          if (follow) setFollow(false);
-        }}
-      >
-        {mode === "pdf" ? (
-          <PdfPage url={b.pdf} page={page} />
-        ) : ch.segments.length ? (
-          <article
-            className="prose"
-            style={{ fontSize: size }}
-            aria-label="Book text"
-          >
-            {ch.segments.map((s, i) => (
-              <p
-                key={i}
-                ref={(el) => {
-                  if (el) refs.current.set(i, el);
-                  else refs.current.delete(i);
-                }}
-                className={`passage ${i === idx ? "spoken" : ""} ${s.text.length < 95 && s.text === s.text.toUpperCase() ? "passage-heading" : ""}`}
-                tabIndex={0}
-                role="button"
-                aria-label={`Listen from: ${s.text.slice(0, 95)}`}
-                aria-current={i === idx ? "true" : undefined}
-                onClick={() => {
-                  p.load(p.chapter, s.start, true);
-                  setFollow(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    p.load(p.chapter, s.start, true);
-                    setFollow(true);
-                  }
-                }}
-              >
-                <span className="passage-marker" aria-hidden="true">
-                  {i === idx ? (
-                    <AudioBars playing={p.playing} />
-                  ) : (
-                    <Play size={12} weight="fill" />
-                  )}
-                </span>
-                {s.text}
-              </p>
-            ))}
-            <div className="chapter-ending">
-              <span />
-              <Leaf size={20} />
-              <span />
-            </div>
-            {p.chapter < b.chapters.length - 1 && (
-              <button
-                className="next-chapter"
-                onClick={() => {
-                  p.load(p.chapter + 1, 0, p.playing);
-                  setFollow(true);
-                }}
-              >
-                <span>
-                  UP NEXT<strong>{b.chapters[p.chapter + 1].title}</strong>
-                </span>
-                <ArrowRight />
-              </button>
-            )}
-          </article>
-        ) : (
-          <article className="prose manual-text">
-            <p>
-              This book has no timed transcript. Read the original PDF while you
-              listen, and turn the pages at your own pace.
-            </p>
-            <button className="primary-button" onClick={() => setMode("pdf")}>
-              Open original PDF
-              <FilePdf />
-            </button>
-          </article>
-        )}
-      </div>
-      <div className="page-navigation">
-        <IconButton
-          label="Previous PDF page"
-          disabled={page <= 1}
-          onClick={() => turn(page - 1)}
-        >
-          <ArrowLeft size={17} />
-        </IconButton>
-        <label>
-          Page{" "}
-          <input
-            aria-label="PDF page number"
-            type="number"
-            min="1"
-            max={b.pageCount}
-            value={page}
-            onChange={(e) => turn(Number(e.target.value))}
-          />{" "}
-          of {b.pageCount}
-        </label>
-        <IconButton
-          label="Next PDF page"
-          disabled={page >= b.pageCount}
-          onClick={() => turn(page + 1)}
-        >
-          <ArrowRight size={17} />
-        </IconButton>
-        {!follow && ch.segments.length > 0 && (
-          <button className="text-button listen-page" onClick={listenPage}>
-            <Headphones size={15} />
-            Listen from this page
-          </button>
-        )}
-      </div>
-    </>
   );
 }
 function Player({ p, onOpen }: { p: Playback; onOpen: () => void }) {
