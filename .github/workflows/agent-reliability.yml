@@ -41,7 +41,7 @@ jobs:
         run: node scripts/sync-partner-commands.mjs
       - name: Linux failure diagnostics (original failure remains blocking)
         if: failure() && runner.os == 'Linux'
-        run: node --test
+        run: node scripts/test-starter.mjs
       - name: Preserve revision-bound command evidence
         if: always() && runner.os == 'Linux'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

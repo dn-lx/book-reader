@@ -2474,3 +2474,14 @@ progress::-webkit-progress-value {
     display: inline-flex;
   }
 }
+
+.intro-ornament > span {
+  color: var(--muted);
+  opacity: 1;
+}
+.intro-ornament {
+  opacity: 1;
+}
+.intro-ornament svg {
+  opacity: 0.8;
+}

@@ -53,6 +53,13 @@ test("listen, follow passages, change chapter, bookmark and restore a reading pl
 test("PDF, voice setup, theme and accessible layout", async ({
   page,
 }, info) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.locator(".featured-book")).toHaveCSS("opacity", "1");
+  const library = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(library.violations).toEqual([]);
   await open(page);
   await expect(page.locator(".reader-main")).toHaveCSS("opacity", "1");
   const light = await new AxeBuilder({ page })
