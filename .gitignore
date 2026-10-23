@@ -62,3 +62,6 @@ apps/mobile/assets/catalog.generated.ts
 apps/mobile/assets/pdf-viewer.generated.html
 apps/mobile/dist/
 *.tsbuildinfo
+
+# Supabase CLI local state
+supabase/.temp/

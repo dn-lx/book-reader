@@ -14,7 +14,7 @@
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "prepare:manifest": "python scripts/prepare_manifest.py",
     "test": "tsx --test tests/*.test.ts",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tsconfig.server.json",
     "test:e2e": "playwright test",
     "check:budget": "node scripts/check-budget.mjs",
     "check": "npm run typecheck && npm test && node scripts/validate-docs.mjs --strict-project && node scripts/validate-agent-stack.mjs"

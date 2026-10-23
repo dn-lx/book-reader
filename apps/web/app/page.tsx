@@ -1,4 +1,3 @@
 import ReaderApp from "../components/ReaderApp";
-export default function Page() {
-  return <ReaderApp />;
-}
+import AccountGate from "../components/AccountGate";
+export default function Page(){return <AccountGate><ReaderApp/></AccountGate>}

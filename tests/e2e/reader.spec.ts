@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { resolve } from "node:path";
+test.beforeEach(async ({ page }) => {
+  const user = await (await page.request.post("/__test/account")).json();
+  const response = await page.request.post("/api/reader/login", {
+    headers: { Origin: "http://localhost:4174" },
+    data: { username: user.username, password: user.password },
+  });
+  expect(response.ok()).toBe(true);
+});
 async function open(page: any) {
   await page.goto("/");
   await page.getByRole("button", { name: "Open book", exact: true }).click();

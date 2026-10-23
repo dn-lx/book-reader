@@ -52,6 +52,8 @@ import {
 } from "@leaf/core";
 import { catalog } from "./assets/catalog.generated";
 import NativePdf from "./NativePdf";
+import ReaderAccountGate, { useReaderAccount } from "./ReaderAccount";
+import type { ReaderNote } from "@leaf/core";
 type Entry = {
   book: Book;
   audio: (number | string)[];
@@ -59,26 +61,6 @@ type Entry = {
   cover?: number;
 };
 type IconName = React.ComponentProps<typeof Feather>["name"];
-const KEY = "leaf.native.v1.";
-const read = async <T,>(k: string, f: T): Promise<T> => {
-  try {
-    return JSON.parse((await AsyncStorage.getItem(KEY + k)) || "null") ?? f;
-  } catch {
-    return f;
-  }
-};
-const store = async (k: string, v: unknown) => {
-  try {
-    await AsyncStorage.setItem(KEY + k, JSON.stringify(v));
-    return true;
-  } catch {
-    Alert.alert(
-      "Storage is unavailable",
-      "Your latest reading place could not be saved.",
-    );
-    return false;
-  }
-};
 const paper = {
   bg: "#f5f3ec",
   paper: "#fffefb",
@@ -136,11 +118,20 @@ function Button({
 export default function App() {
   return (
     <SafeAreaProvider>
-      <LeafApp />
+      <ReaderAccountGate>
+        <LeafApp />
+      </ReaderAccountGate>
     </SafeAreaProvider>
   );
 }
 function LeafApp() {
+  const { session, read, store, api, logout, syncMessage } = useReaderAccount();
+  const [notes, setNotes] = useState<ReaderNote[]>([]),
+    [noteText, setNoteText] = useState(""),
+    [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
+  useEffect(() => {
+    read<ReaderNote[]>("notes", []).then(setNotes);
+  }, [read]);
   const insets = useSafeAreaInsets(),
     { width } = useWindowDimensions();
   const [theme, setTheme] = useState("paper"),
@@ -516,10 +507,10 @@ function LeafApp() {
             }}
           />
           <Button
-            icon="headphones"
-            label="Choose narration voice"
+            icon="user"
+            label="My account"
             styles={s}
-            onPress={() => setSheet("voices")}
+            onPress={() => setSheet("account")}
           />
           <Button
             icon="plus"
@@ -680,7 +671,7 @@ function LeafApp() {
                                   setBooks(next);
                                   await FS.deleteAsync(
                                     FS.documentDirectory +
-                                      "books/" +
+                                      `reader-${session.account.id}/books/` +
                                       b.id +
                                       "/",
                                     { idempotent: true },
@@ -1035,17 +1026,21 @@ function LeafApp() {
             <View style={s.sheetHandle} />
             <View style={s.sheetHead}>
               <Text style={s.sheetTitle}>
-                {sheet === "chapters"
-                  ? "Contents"
-                  : sheet === "marks"
-                    ? "Your bookmarks"
-                    : sheet === "sleep"
-                      ? "A little rest"
-                      : sheet === "voices"
-                        ? "A voice to read with"
-                        : sheet === "rate"
-                          ? "Find your pace"
-                          : "Make room for another book"}
+                {sheet === "notes"
+                  ? "Your notes"
+                  : sheet === "account"
+                    ? "Your account"
+                    : sheet === "chapters"
+                      ? "Contents"
+                      : sheet === "marks"
+                        ? "Your bookmarks"
+                        : sheet === "sleep"
+                          ? "A little rest"
+                          : sheet === "voices"
+                            ? "A voice to read with"
+                            : sheet === "rate"
+                              ? "Find your pace"
+                              : "Make room for another book"}
               </Text>
               <Button
                 icon="x"
@@ -1196,9 +1191,160 @@ function LeafApp() {
                 ))}
               </View>
             )}
+            {sheet === "notes" && (
+              <ScrollView keyboardShouldPersistTaps="handled">
+                <Text style={s.muted}>A thought to keep, just for you.</Text>
+                {(entry || editingNote) && (
+                  <>
+                    <TextInput
+                      accessibilityLabel="Your note"
+                      multiline
+                      value={noteText}
+                      onChangeText={setNoteText}
+                      maxLength={10000}
+                      placeholder="What would you like to remember?"
+                      placeholderTextColor={colors.muted}
+                      style={{
+                        minHeight: 120,
+                        borderWidth: 1,
+                        borderColor: colors.line,
+                        borderRadius: 10,
+                        color: colors.ink,
+                        padding: 15,
+                        marginVertical: 18,
+                        textAlignVertical: "top",
+                      }}
+                    />
+                    <Pressable
+                      style={s.primary}
+                      onPress={async () => {
+                        if (!noteText.trim()) return;
+                        const n: ReaderNote = editingNote
+                          ? { ...editingNote, body: noteText.trim() }
+                          : {
+                              id:
+                                Date.now().toString(36) +
+                                "-" +
+                                Math.random().toString(36).slice(2),
+                              bookId: entry!.book.id,
+                              chapter,
+                              page,
+                              time: player.currentTime || 0,
+                              body: noteText.trim(),
+                              created: Date.now(),
+                            };
+                        const next = [n, ...notes.filter((x) => x.id !== n.id)];
+                        if (await store("notes", next)) {
+                          setNotes(next);
+                          setNoteText("");
+                          setEditingNote(null);
+                          setToast("Your thought has been saved.");
+                        }
+                      }}
+                    >
+                      <Text style={s.primaryText}>Save note</Text>
+                    </Pressable>
+                  </>
+                )}
+                {notes.map((n) => (
+                  <View
+                    key={n.id}
+                    style={{
+                      paddingVertical: 18,
+                      borderBottomWidth: 1,
+                      borderColor: colors.line,
+                    }}
+                  >
+                    <Text style={s.muted}>
+                      Page {n.page} ·{" "}
+                      {books.find((b) => b.book.id === n.bookId)?.book.title ||
+                        "Your book"}
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.ink,
+                        fontSize: 16,
+                        lineHeight: 25,
+                        marginVertical: 12,
+                      }}
+                    >
+                      {n.body}
+                    </Text>
+                    <View style={{ flexDirection: "row", gap: 24 }}>
+                      <Pressable
+                        onPress={() => {
+                          const e = books.find((b) => b.book.id === n.bookId);
+                          if (e) {
+                            load(n.chapter, n.time, false, e);
+                            setPage(n.page);
+                            setMode("pdf");
+                            setFollow(false);
+                            setReading(true);
+                            setSheet("");
+                          }
+                        }}
+                      >
+                        <Text style={s.muted}>Open page</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => {
+                          setEditingNote(n);
+                          setNoteText(n.body);
+                        }}
+                      >
+                        <Text style={s.muted}>Edit note</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={async () => {
+                          const next = notes.filter((x) => x.id !== n.id);
+                          if (await store("notes", next)) setNotes(next);
+                        }}
+                      >
+                        <Text style={s.muted}>Delete note</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            {sheet === "account" && (
+              <ScrollView>
+                <Text style={s.sheetTitle}>{session.account.displayName}</Text>
+                <Pressable onPress={() => setSheet("notes")}>
+                  <Text style={[s.muted, { paddingVertical: 15 }]}>
+                    My notes →
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setSheet("voices")}>
+                  <Text style={[s.muted, { paddingVertical: 15 }]}>
+                    Narration voice →
+                  </Text>
+                </Pressable>
+                <Text style={s.muted}>@{session.account.username}</Text>
+                <Text style={[s.muted, { marginVertical: 18 }]}>
+                  Your bookmarks, notes and reading place belong to your
+                  account. Imported files stay on this device.
+                </Text>
+                {!!syncMessage && <Text style={s.muted}>{syncMessage}</Text>}
+                {session.account.role === "admin" && (
+                  <Text style={s.muted}>
+                    Manage invitations and library access on the website.
+                  </Text>
+                )}
+                <Pressable
+                  style={s.primary}
+                  onPress={() => {
+                    void logout();
+                  }}
+                >
+                  <Text style={s.primaryText}>Sign out</Text>
+                </Pressable>
+              </ScrollView>
+            )}
             {sheet === "import" && (
               <ImportBook
                 styles={s}
+                accountId={session.account.id}
                 onAdded={async (e) => {
                   const next = [...books, e];
                   if (
@@ -1242,11 +1388,13 @@ async function duration(uri: string) {
   }
 }
 function ImportBook({
+  accountId,
   styles: s,
   onAdded,
 }: {
   styles: ReturnType<typeof makeStyles>;
   onAdded: (e: Entry) => Promise<boolean>;
+  accountId: string;
 }) {
   const [title, setTitle] = useState(""),
     [author, setAuthor] = useState(""),
@@ -1294,7 +1442,7 @@ function ImportBook({
     let createdFolder = "";
     try {
       const id = "local-" + Date.now(),
-        folder = FS.documentDirectory + "books/" + id + "/";
+        folder = FS.documentDirectory + `reader-${accountId}/books/` + id + "/";
       createdFolder = folder;
       await FS.makeDirectoryAsync(folder, { intermediates: true });
       await FS.copyAsync({ from: pdf.uri, to: folder + "book.pdf" });

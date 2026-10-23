@@ -4,9 +4,9 @@ export type StoredBook = {
   pdf: Blob;
   audio: { name: string; blob: Blob }[];
 };
-const open = () =>
+const open = (account = "legacy") =>
   new Promise<IDBDatabase>((resolve, reject) => {
-    const r = indexedDB.open("leaf-library", 1);
+    const r = indexedDB.open("leaf-library-" + account, 1);
     r.onupgradeneeded = () =>
       r.result.createObjectStore("books", { keyPath: "book.id" });
     r.onsuccess = () => resolve(r.result);
@@ -15,8 +15,9 @@ const open = () =>
 async function run<T>(
   mode: IDBTransactionMode,
   action: (s: IDBObjectStore) => IDBRequest<T>,
+  account = "legacy",
 ): Promise<T> {
-  const db = await open();
+  const db = await open(account);
   return new Promise((resolve, reject) => {
     const tx = db.transaction("books", mode),
       r = action(tx.objectStore("books"));
@@ -34,29 +35,43 @@ async function run<T>(
     };
   });
 }
-export const getLocalBooks = () =>
-  run<StoredBook[]>("readonly", (s) => s.getAll());
-export const putLocalBook = (book: StoredBook) =>
-  run("readwrite", (s) => s.put(book));
-export const deleteLocalBook = (id: string) =>
-  run("readwrite", (s) => s.delete(id));
-export function readSaved<T>(key: string, fallback: T): T {
-  try {
-    return (
-      JSON.parse(localStorage.getItem("leaf." + key) || "null") ?? fallback
-    );
-  } catch {
-    return fallback;
-  }
+export function createReaderStorage(
+  account: string,
+  onSave: (key: string, value: unknown, previous: unknown) => void = () => {},
+) {
+  const prefix = "leaf.account." + account + ".";
+  const readSaved = <T>(key: string, fallback: T): T => {
+    try {
+      return (
+        JSON.parse(localStorage.getItem(prefix + key) || "null") ?? fallback
+      );
+    } catch {
+      return fallback;
+    }
+  };
+  const writeSaved = (key: string, value: unknown, silent = false) => {
+    try {
+      const previous = readSaved(key, null);
+      localStorage.setItem(prefix + key, JSON.stringify(value));
+      if (!silent) onSave(key, value, previous);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  return {
+    readSaved,
+    writeSaved,
+    getLocalBooks: () =>
+      run<StoredBook[]>("readonly", (s) => s.getAll(), account),
+    putLocalBook: (book: StoredBook) =>
+      run("readwrite", (s) => s.put(book), account),
+    deleteLocalBook: (id: string) =>
+      run("readwrite", (s) => s.delete(id), account),
+    cacheName: "leaf-books-account-" + account,
+  };
 }
-export function writeSaved(key: string, value: unknown) {
-  try {
-    localStorage.setItem("leaf." + key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
-}
+export type ReaderStorage = ReturnType<typeof createReaderStorage>;
 export function materialize(record: StoredBook): Book {
   return {
     ...record.book,

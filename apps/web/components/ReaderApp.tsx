@@ -60,15 +60,10 @@ import {
   validateBook,
   validateTimedBook,
 } from "@leaf/core";
-import {
-  deleteLocalBook,
-  getLocalBooks,
-  materialize,
-  putLocalBook,
-  readSaved,
-  writeSaved,
-  type StoredBook,
-} from "../lib/storage";
+import { materialize, type StoredBook } from "../lib/storage";
+import { useAccount } from "../lib/account";
+import { type ReaderNote } from "@leaf/core";
+import AccountPanel from "./AccountPanel";
 import { usePlayback, type Playback } from "../lib/playback";
 import { pdfLibrary } from "../lib/pdf";
 import { PdfPage } from "./PdfPage";
@@ -178,6 +173,20 @@ function AudioBars({ playing }: { playing: boolean }) {
   );
 }
 export default function ReaderApp() {
+  const { account, storage, logout, syncMessage } = useAccount();
+  const {
+    readSaved,
+    writeSaved,
+    getLocalBooks,
+    putLocalBook,
+    deleteLocalBook,
+    cacheName,
+  } = storage;
+  const [notes, setNotes] = useState<ReaderNote[]>(() =>
+    readSaved("notes", []),
+  );
+  const [noteText, setNoteText] = useState("");
+  const [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
   const [books, setBooks] = useState<Book[]>([]),
     [boot, setBoot] = useState(true),
     [error, setError] = useState(""),
@@ -200,7 +209,7 @@ export default function ReaderApp() {
     if (timeout.current) clearTimeout(timeout.current);
     timeout.current = setTimeout(() => setNotice(""), 4500);
   }, []);
-  const p = usePlayback(notify);
+  const p = usePlayback(notify, storage);
   const loadBooks = useCallback(async () => {
     setBoot(true);
     setError("");
@@ -266,7 +275,7 @@ export default function ReaderApp() {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     if ("caches" in window)
-      caches.open("leaf-books-v1").then(async (cache) => {
+      caches.open(cacheName).then(async (cache) => {
         const keys = await cache.keys();
         setOfflineIds([
           ...new Set(
@@ -357,7 +366,7 @@ export default function ReaderApp() {
     const added: string[] = [];
     let downloadCache: Cache | null = null;
     try {
-      const cache = await caches.open("leaf-books-v1");
+      const cache = await caches.open(cacheName);
       downloadCache = cache;
       if (offlineIds.includes(b.id)) {
         const keys = await cache.keys();
@@ -558,6 +567,39 @@ export default function ReaderApp() {
       )}
       <div className="sidebar-bottom">
         <button
+          className="nav-item"
+          onClick={() => {
+            setDrawer(false);
+            setModal("notes");
+          }}
+        >
+          <TextAa />
+          My notes <span className="count">{notes.length}</span>
+        </button>
+        <button
+          className="nav-item"
+          onClick={() => {
+            setDrawer(false);
+            setModal("account");
+          }}
+        >
+          <Leaf />
+          {account.displayName}
+        </button>
+        {syncMessage && (
+          <p className="quiet-note" role="status">
+            {syncMessage}
+          </p>
+        )}
+        <button
+          className="install-link"
+          onClick={() => {
+            void logout();
+          }}
+        >
+          Sign out
+        </button>
+        <button
           className="nav-item add-book"
           onClick={() => setModal("import")}
         >
@@ -589,6 +631,125 @@ export default function ReaderApp() {
   );
   return (
     <MotionConfig reducedMotion="user">
+      {modal === "account" && (
+        <Modal title="Your reading account" onClose={() => setModal("")}>
+          <AccountPanel />
+        </Modal>
+      )}
+      {modal === "notes" && (
+        <Modal
+          title="Your notes"
+          onClose={() => {
+            setModal("");
+            setEditingNote(null);
+            setNoteText("");
+          }}
+          wide
+        >
+          <p className="quiet-note">A thought to keep, just for you.</p>
+          {(p.book || editingNote) && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!noteText.trim()) return;
+                const n: ReaderNote = editingNote
+                  ? { ...editingNote, body: noteText.trim() }
+                  : {
+                      id: crypto.randomUUID(),
+                      bookId: p.book!.id,
+                      chapter: p.chapter,
+                      page: p.page,
+                      time: p.time,
+                      body: noteText.trim(),
+                      created: Date.now(),
+                    };
+                const next = [n, ...notes.filter((x) => x.id !== n.id)];
+                writeSaved("notes", next);
+                setNotes(next);
+                setNoteText("");
+                setEditingNote(null);
+                notify("Your thought has been saved.");
+              }}
+              className="note-form"
+            >
+              <label>
+                {editingNote ? "Edit your note" : `A note on page ${p.page}`}
+                <textarea
+                  aria-label="Your note"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  maxLength={10000}
+                  required
+                  rows={4}
+                />
+              </label>
+              <button className="primary-button" type="submit">
+                Save note
+              </button>
+              {editingNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNote(null);
+                    setNoteText("");
+                  }}
+                >
+                  Cancel editing
+                </button>
+              )}
+            </form>
+          )}
+          <div className="notes-list">
+            {notes.length ? (
+              notes.map((n) => (
+                <article className="note-card" key={n.id}>
+                  <small>
+                    {books.find((b) => b.id === n.bookId)?.title || "Your book"}{" "}
+                    · Page {n.page}
+                  </small>
+                  <p>{n.body}</p>
+                  <div>
+                    <button
+                      onClick={() => {
+                        const b = books.find((b) => b.id === n.bookId);
+                        if (b) {
+                          open(b);
+                          p.load(n.chapter, n.time, false, b);
+                          p.setPage(n.page);
+                          setModal("");
+                        }
+                      }}
+                    >
+                      Open page
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingNote(n);
+                        setNoteText(n.body);
+                      }}
+                    >
+                      Edit note
+                    </button>
+                    <button
+                      onClick={() => {
+                        const next = notes.filter((x) => x.id !== n.id);
+                        writeSaved("notes", next);
+                        setNotes(next);
+                      }}
+                    >
+                      Delete note
+                    </button>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <p className="quiet-note">
+                Open a book and save your first thought here.
+              </p>
+            )}
+          </div>
+        </Modal>
+      )}
       <div
         className={`app-shell ${p.book ? "has-player" : ""} ${reading ? "is-reading" : ""}`}
       >
@@ -887,7 +1048,7 @@ export default function ReaderApp() {
                       <span>Just you and the next page.</span>
                     </p>
                   </div>
-                  <span>Your reading place stays on this device.</span>
+                  <span>Your place, saved just for you.</span>
                 </div>
               </motion.main>
             )}
@@ -1018,8 +1179,9 @@ export default function ReaderApp() {
                 </span>
               </div>
               <p className="muted">
-                Your progress and imported books are saved on this device. Audio
-                and page cues follow passages, rather than individual words.
+                Your bookmarks, notes and reading place are private to your
+                account. Imported book files stay on this device. Audio and page
+                cues follow passages, rather than individual words.
               </p>
             </div>
           </Modal>
@@ -1066,6 +1228,9 @@ function Reader({
   offlineLabel: string;
   isOffline: boolean;
 }) {
+  const {
+    storage: { readSaved, writeSaved, putLocalBook },
+  } = useAccount();
   const b = p.book!,
     ch = b.chapters[p.chapter],
     idx = segmentAt(ch.segments, p.time),
@@ -1582,6 +1747,9 @@ function ImportModal({
   onClose: () => void;
   onAdded: (b: Book) => void;
 }) {
+  const {
+    storage: { readSaved, writeSaved, putLocalBook },
+  } = useAccount();
   const [title, setTitle] = useState(""),
     [author, setAuthor] = useState(""),
     [pdf, setPdf] = useState<File | null>(null),
