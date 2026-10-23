@@ -315,3 +315,36 @@ test("outbox keeps its original revision after reload and lets unrelated changes
   assert.deepEqual(snapshot.pending, {});
   assert(writes.includes("note.b"));
 });
+
+test("HTTP rejection status survives a non-JSON body and late rejections cannot clear a new cookie", async () => {
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () =>
+      new Response("Unauthorized", { status: 401 });
+    const { readerClient, ReaderApiError } = await import(
+      "../packages/core/src/reader-account"
+    );
+    await assert.rejects(
+      readerClient("https://reader.test")("/me"),
+      (e) => e instanceof ReaderApiError && e.status === 401,
+    );
+  } finally {
+    globalThis.fetch = original;
+  }
+  for (const path of ["/me", "/state", "/logout"]) {
+    const response = await proxyReader(
+      new Request(base + path, {
+        method: path === "/logout" ? "POST" : "GET",
+        headers: {
+          Origin: "https://reader.test",
+          cookie: `${COOKIE}=${"b".repeat(64)}`,
+        },
+        body: path === "/logout" ? "{}" : undefined,
+      }),
+      "local",
+      async () => new Response('{"error":"Please sign in"}', { status: 401 }),
+    );
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get("set-cookie"), null);
+  }
+});

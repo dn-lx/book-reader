@@ -204,3 +204,49 @@ test("offline outbox survives reload, restarts workers, and logout clears other 
   ).toBe(401);
   await cdp.detach();
 });
+
+test("expiry signs out an open reader and logout survives unavailable local storage", async ({
+  page,
+}) => {
+  const alice = await user(page);
+  await page.route("**/api/reader/login", async (route) => {
+    const response = await route.fetch(),
+      data = await response.json();
+    data.expiresAt = new Date(Date.now() + 1600).toISOString();
+    await route.fulfill({ response, json: data });
+  });
+  await signIn(page, alice);
+  await expect(
+    page.getByRole("heading", { name: "Welcome back." }),
+  ).toBeVisible({ timeout: 5000 });
+  await page.unroute("**/api/reader/login");
+  await signIn(page, alice);
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === "leaf.reader.logged-out")
+        throw new DOMException("Quota reached", "QuotaExceededError");
+      return original.call(this, key, value);
+    };
+  });
+  await logout(page);
+  await expect(page.locator(".app-shell")).toHaveCount(0);
+});
+
+test("failed logout keeps the reader closed until server revocation can retry", async ({
+  page,
+}) => {
+  const alice = await user(page);
+  await signIn(page, alice);
+  await page.route("**/api/reader/logout", (route) =>
+    route.fulfill({ status: 503, json: { error: "Temporarily unavailable" } }),
+  );
+  await logout(page);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back." }),
+  ).toBeVisible();
+  await expect(page.locator(".app-shell")).toHaveCount(0);
+  await page.unroute("**/api/reader/logout");
+  await signIn(page, alice);
+});
