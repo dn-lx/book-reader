@@ -1,6 +1,6 @@
 # Reader accounts and Netlify development setup
 
-Updated 2026-10-23. Accounts are standalone rows in the Me+ project; no `auth.users` identity is created or required.
+Updated 2026-10-24. Accounts are standalone rows in the Me+ project; no `auth.users` identity is created or required.
 
 ## Account data
 
@@ -28,24 +28,15 @@ There is no public signup or automatic email. Password reset/self-service passwo
 
 ## Deploy the development version
 
-The authorized project is `pagechime`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`, team `don-alex-perera`. Production PR #2 stays paused. No Netlify upload has succeeded yet.
+The existing Netlify project pagechime (73688a4b-90ab-4eac-be6d-ef305f33ebc3), team don-alex-perera, is now Git-linked to dn-lx/pagechime. The production branch is reserved as main; develop is the sole enabled branch-deploy branch. Work and deploy development only on develop until the owner explicitly asks to promote main.
 
-`netlify.toml` publishes `apps/web/out`, bundles the BFF, and routes the media edge guard over `/books/*` and `/library.json`. Private media responses are no-store. The original Manifest files are ignored inputs already present in the execution workspace. A clean Git continuous deployment build does not include them; do not call an empty-library Git deploy the complete Manifest deployment.
+The initial develop-source deployment is ready with the reader function and media edge guard. The dedicated branch URL is https://develop--pagechime.netlify.app. Exact deploy IDs, context, source revisions and remaining live-browser checks are recorded in docs/CURRENT-HANDOFF.md. Team-login protection stays enabled until application/media boundaries are verified.
 
-The Netlify connector can manage projects/access settings, but does not expose upload or Git-link operations. CLI linking currently reports **Authentication required**. The managed workspace only allows package-manager hosts. Enable the supported network configuration for `api.netlify.com`, `app.netlify.com`, the resulting `*.netlify.app` deployment and `wbqnctrvxohxwiaignhg.supabase.co`, then authenticate Netlify CLI through its normal browser authorization. Do not paste a token into chat or Git.
+The root netlify.toml builds with npm run build and publishes apps/web/out. It bundles the HttpOnly-cookie BFF and media guard over /books/* and /library.json. A push to develop triggers its branch deploy. Do not publish main or create another Netlify project.
 
-For a local prebuilt development preview, after checking out the verified `develop` revision and restoring private inputs:
+Private Manifest files are ignored build inputs and were not inherited by the current Windows workspace. A clean Git build starts with an empty shelf that supports local imports; it must not be called complete Manifest delivery. Restore the prepared PDF, cover, chapter audio and timing JSON using docs/CONTENT-AND-VOICES.md before verifying the complete book. Never commit those private assets to public Git.
 
-```sh
-npm ci
-npm run build
-npx netlify-cli@27.14.2 link --filter @pagechime/web --id 73688a4b-90ab-4eac-be6d-ef305f33ebc3
-npx netlify-cli@27.14.2 deploy --filter @pagechime/web --dir apps/web/out --no-build --context branch-deploy
-```
-
-Confirm the CLI's resolved publish/functions/edge directories before upload. `--context branch-deploy` selects environment context; it does not create a Git branch deploy. A real `develop` branch subdomain requires linking Git and enabling that branch in Netlify. An alias does not establish that configuration. Keep these delivery states distinct in reporting.
-
-Keep the outer Netlify team-login gate until the app/media checks below pass. Then allow intended readers through the site visibility layer while preserving reader authentication. Do not publish `main` or the unrelated unused ChatGPT Site.
+Authenticated Netlify dashboard and existing GitHub authorization worked in this session; the former cloud CLI/network blocker is no longer the setup path. The execution environment later became unavailable during live-reader verification, so a ready deploy does not establish successful account/media/browser behavior.
 
 ## Verification evidence and remaining hosted checks
 
