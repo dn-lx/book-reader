@@ -348,3 +348,91 @@ test("HTTP rejection status survives a non-JSON body and late rejections cannot 
     assert.equal(response.headers.get("set-cookie"), null);
   }
 });
+
+test("optional reading and quotation metadata reject malformed synced values and accept old notes", async () => {
+  const { call, login } = await setup(),
+    token = await login();
+  const value = {
+    bookId: "demo",
+    page: 1,
+    chapter: 0,
+    time: 0,
+    body: "A thought",
+  };
+  for (const extra of [
+    { quote: { x: 1 } },
+    { quote: "a".repeat(2001) },
+    { kind: "script" },
+    { segment: -1 },
+    { offset: 1.5 },
+    { segment: 2, endSegment: 1 },
+    { segment: 1, offset: 8, endSegment: 1, endOffset: 3 },
+    { reading: { chapter: 0, segment: "0", offset: 0 } },
+  ])
+    assert.equal(
+      (
+        await call(
+          "/state",
+          "PUT",
+          { key: "note.bad", revision: 0, value: { ...value, ...extra } },
+          token,
+        )
+      ).status,
+      400,
+    );
+  assert.equal(
+    (
+      await call(
+        "/state",
+        "PUT",
+        { key: "note.legacy", revision: 0, value },
+        token,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await call(
+        "/state",
+        "PUT",
+        {
+          key: "note.quote",
+          revision: 0,
+          value: {
+            ...value,
+            quote: "A sentence",
+            kind: "highlight",
+            segment: 0,
+            offset: 0,
+            endSegment: 0,
+            endOffset: 10,
+          },
+        },
+        token,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await call(
+        "/state",
+        "PUT",
+        {
+          key: "progress.demo",
+          revision: 0,
+          value: {
+            bookId: "demo",
+            page: 1,
+            chapter: 0,
+            time: 2,
+            reading: { chapter: 1, segment: 0, offset: 15 },
+          },
+        },
+        token,
+      )
+    ).status,
+    200,
+  );
+});

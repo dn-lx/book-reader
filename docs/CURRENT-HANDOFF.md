@@ -3,7 +3,7 @@
 Updated 2026-10-23.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-009","repository":"dn-lx/pagechime","base":"dev","branch":"feature/ebook-reading","pr":null,"status":"planning","last_verified_sha":"a47df70064defa7d4e8cf40109304e1b6ddb7d92","next_step":"Open draft PR and implement the interactive text reader per docs/plans/REQ-009-ebook-reading.md. Netlify remains blocked by workspace networking.","updated_at":"2026-10-23T21:10:14.780368+00:00"}
+{"task_id":"REQ-009","repository":"dn-lx/pagechime","base":"dev","branch":"feature/ebook-reading","pr":4,"status":"implementing","last_verified_sha":"a47df70064defa7d4e8cf40109304e1b6ddb7d92","next_step":"Finish REQ-009 regression/runtime verification and independent review, update evidence, then merge PR #4 into dev after exact-head CI. Netlify access remains restricted pending owner configuration.","updated_at":"2026-10-23T21:36:08.560925+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Development delivery
@@ -54,3 +54,9 @@ Current managed networking still allows package-manager hosts only; Netlify CLI 
 Recovery is complete: forward repair3f653c5 restored the entire source tree (256 tracked files; tree00d751f150c32e5227f8b7ead07d8d43cbd9f67d) after incomplete documentation trees were created in e2fcc9b/c685e0c. No deployment or integration branch changed. The exact historical Gitleaks exception is independently reviewed and the full history scan passed; retain all other scanning rules.
 
 Owner renamed the same Netlify site to pagechime; connector readback confirms ID/team/privacy unchanged. Workspace spec44 still permits only package-manager hosts and an actual Netlify request receives proxy403. User was asked to apply the necessary workspace allowlist while reader implementation continues.
+
+## Interactive reader checkpoint
+
+REQ-009 source implements shared lossless pagination, reflow anchors, independent reading/audio positions, appearance controls, exact quotation selection and account-owned notes/highlights on web and Expo. Draft PR #4 is open into dev. Twenty unit/contracts and the Next export passed; new browser corpus tests are being repaired to use isolated test-server fixtures through the real worker/account path. Independent review approved the additive server metadata validator and identified web PDF/synced-anchor restore issues; fixes are under verification. Both platforms need final export/runtime evidence before completion. No private content is tracked.
+
+Managed workspace spec50 enforces restricted networking with package-manager hosts only. The owner located Additional allowed domains in an Environment editor (screenshot labelled me-plus); requested domains must be applied to this chat's environment and published. Earlier cloud-icon/menu guidance was unverified and should not be repeated. No Netlify upload has occurred.

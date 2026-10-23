@@ -344,6 +344,50 @@ export function createReaderApi(db: Database, pepper: string) {
             v.time < 0
           )
             return fail(400, "Invalid reading position.");
+          const integer = (n: unknown) =>
+            Number.isSafeInteger(n) && Number(n) >= 0;
+          if (
+            v.quote !== undefined &&
+            (typeof v.quote !== "string" || v.quote.length > 2000)
+          )
+            return fail(
+              400,
+              "A quotation must be text up to 2,000 characters.",
+            );
+          if (v.kind !== undefined && !["note", "highlight"].includes(v.kind))
+            return fail(400, "Invalid note type.");
+          for (const field of ["segment", "offset", "endSegment", "endOffset"])
+            if (v[field] !== undefined && !integer(v[field]))
+              return fail(400, "Invalid text selection.");
+          if (
+            v.endSegment !== undefined &&
+            v.segment !== undefined &&
+            (v.endSegment < v.segment ||
+              (v.endSegment === v.segment &&
+                (v.endOffset ?? 0) < (v.offset ?? 0)))
+          )
+            return fail(400, "Invalid text selection.");
+          if (
+            ["segment", "offset", "endSegment", "endOffset"].some(
+              (k) => v[k] !== undefined,
+            ) &&
+            !["segment", "offset", "endSegment", "endOffset"].every((k) =>
+              integer(v[k]),
+            )
+          )
+            return fail(400, "Incomplete text selection.");
+          if (v.reading !== undefined) {
+            const a = v.reading;
+            if (
+              !a ||
+              typeof a !== "object" ||
+              Array.isArray(a) ||
+              !integer(a.chapter) ||
+              !integer(a.segment) ||
+              !integer(a.offset)
+            )
+              return fail(400, "Invalid reading anchor.");
+          }
         }
         const revision = await db.rpc<number | null>(
           "book_reader_write_state",

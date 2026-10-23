@@ -43,6 +43,8 @@ import {
   type Book,
   type Bookmark,
   type Progress,
+  type ReadingAnchor,
+  type ReadingSelection,
   clamp,
   formatTime,
   globalPosition,
@@ -52,6 +54,7 @@ import {
 } from "@pagechime/core";
 import { catalog } from "./assets/catalog.generated";
 import NativePdf from "./NativePdf";
+import BookText from "./BookText";
 import ReaderAccountGate, { useReaderAccount } from "./ReaderAccount";
 import type { ReaderNote } from "@pagechime/core";
 type Entry = {
@@ -130,6 +133,9 @@ function PagechimeApp() {
   const [notes, setNotes] = useState<ReaderNote[]>([]),
     [noteText, setNoteText] = useState(""),
     [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
+  const [noteDraft, setNoteDraft] = useState<ReadingSelection | null>(null);
+  const readingAnchors = useRef<Record<string, ReadingAnchor>>({});
+  const [readingKey, setReadingKey] = useState(0);
   useEffect(() => {
     read<ReaderNote[]>("notes", []).then(setNotes);
   }, [read]);
@@ -153,6 +159,9 @@ function PagechimeApp() {
     [loadError, setLoadError] = useState(""),
     [ready, setReady] = useState(false),
     [sleep, setSleep] = useState(0);
+  useEffect(() => {
+    if (sheet !== "notes") setNoteDraft(null);
+  }, [sheet]);
   const colors = theme === "night" ? night : paper,
     s = useMemo(() => makeStyles(colors), [colors]);
   const fade = useRef(new Animated.Value(1)).current,
@@ -173,7 +182,13 @@ function PagechimeApp() {
     }),
     loadToken = useRef(0),
     loadRef = useRef<
-      (i: number, t?: number, play?: boolean, e?: Entry) => void
+      (
+        i: number,
+        t?: number,
+        play?: boolean,
+        e?: Entry,
+        preserveReading?: boolean,
+      ) => void
     >(() => {});
   const [player, setPlayer] = useState(() =>
       createAudioPlayer(null, {
@@ -202,6 +217,8 @@ function PagechimeApp() {
       ]);
       setBooks([...catalog, ...local]);
       setProgress(p);
+      for (const [id, place] of Object.entries(p))
+        if (place.reading) readingAnchors.current[id] = place.reading;
       setMarks(m);
       setTheme(t);
       setRate(r);
@@ -239,6 +256,7 @@ function PagechimeApp() {
         updated: Date.now(),
       };
     setProgress((old) => {
+      p.reading = readingAnchors.current[e.book.id] || old[e.book.id]?.reading;
       const next = { ...old, [e.book.id]: p };
       store("progress", next);
       return next;
@@ -264,7 +282,7 @@ function PagechimeApp() {
     return () => sub.remove();
   }, [save]);
   const load = useCallback(
-    (i: number, t = 0, play = false, e?: Entry) => {
+    (i: number, t = 0, play = false, e?: Entry, preserveReading = false) => {
       const next = e || current.current.entry;
       if (!next) return;
       save();
@@ -273,11 +291,13 @@ function PagechimeApp() {
       current.current = { entry: next, chapter: c };
       setEntry(next);
       setChapter(c);
-      setPage(chapterData.segments[0]?.page || chapterData.firstPage || 1);
-      setFollow(true);
+      if (!preserveReading || follow)
+        setPage(chapterData.segments[0]?.page || chapterData.firstPage || 1);
+      if (!preserveReading) setFollow(true);
       setLoadError("");
       paragraphY.current = {};
-      setMode(chapterData.segments.length ? "text" : "pdf");
+      if (!preserveReading)
+        setMode(chapterData.segments.length ? "text" : "pdf");
       const target = clamp(t, 0, chapterData.duration || 1e9);
 
       const token = ++loadToken.current;
@@ -307,7 +327,7 @@ function PagechimeApp() {
         setLoadError("This audio file could not be opened.");
         pending.current = null;
       }
-      if (!reduce) {
+      if (!reduce && !preserveReading) {
         fade.setValue(0);
         Animated.timing(fade, {
           toValue: 1,
@@ -322,7 +342,7 @@ function PagechimeApp() {
         }
       }, 12000);
     },
-    [save, player, rate, reduce, fade],
+    [save, player, rate, reduce, fade, follow],
   );
   loadRef.current = load;
   useEffect(() => {
@@ -353,7 +373,8 @@ function PagechimeApp() {
       return;
     const e = current.current.entry,
       c = current.current.chapter;
-    if (e && c < e.book.chapters.length - 1) loadRef.current(c + 1, 0, true);
+    if (e && c < e.book.chapters.length - 1)
+      loadRef.current(c + 1, 0, true, undefined, true);
     else if (e) {
       save();
       setToast("The last page. Thank you for making time.");
@@ -379,6 +400,8 @@ function PagechimeApp() {
       setFollow(false);
       setMode("pdf");
     }
+    if (p?.reading && p.view !== "pdf") setFollow(false);
+    setReadingKey((k) => k + 1);
     setReading(true);
     Haptics.selectionAsync().catch(() => {});
   }
@@ -399,13 +422,21 @@ function PagechimeApp() {
   }
   function bookmark() {
     if (!entry || !ch) return;
+    const readingAnchor =
+      mode === "text" ? readingAnchors.current[entry.book.id] : undefined;
+    const readingSegment = readingAnchor
+      ? entry.book.chapters[readingAnchor.chapter]?.segments[
+          readingAnchor.segment
+        ]
+      : undefined;
     const m: Bookmark = {
         id: String(Date.now()),
         bookId: entry.book.id,
-        chapter,
-        time: status.currentTime,
-        page,
-        text: active?.text || ch.title,
+        chapter: readingAnchor?.chapter ?? chapter,
+        time: readingSegment?.start ?? status.currentTime,
+        page: readingSegment?.page ?? page,
+        text: readingSegment?.text || active?.text || ch.title,
+        reading: readingAnchor,
         created: Date.now(),
       },
       next = [m, ...marks];
@@ -735,10 +766,12 @@ function PagechimeApp() {
         >
           <View style={s.readerTop}>
             <Text style={s.eyebrow}>
-              {String(chapter + 1).padStart(2, "0")} /{" "}
-              {String(entry.book.chapters.length).padStart(2, "0")} CHAPTERS
+              {String(
+                (progress[entry.book.id]?.reading?.chapter ?? chapter) + 1,
+              ).padStart(2, "0")}{" "}
+              / {String(entry.book.chapters.length).padStart(2, "0")} CHAPTERS
             </Text>
-            <Text style={s.readerTitle}>{ch.title}</Text>
+            <Text style={s.readerTitle}>{entry.book.title}</Text>
             <Text style={s.small}>
               {entry.book.title} · {entry.book.author}
             </Text>
@@ -764,20 +797,6 @@ function PagechimeApp() {
             </View>
             <View style={s.row}>
               <Button
-                icon="minus"
-                label="Smaller reading text"
-                styles={s}
-                disabled={textSize <= 18}
-                onPress={() => setTextSize(textSize - 2)}
-              />
-              <Button
-                icon="plus"
-                label="Larger reading text"
-                styles={s}
-                disabled={textSize >= 30}
-                onPress={() => setTextSize(textSize + 2)}
-              />
-              <Button
                 icon="bookmark"
                 label="Bookmark this moment"
                 styles={s}
@@ -793,61 +812,91 @@ function PagechimeApp() {
                 page={page}
                 onCount={updatePageCount}
               />
-            ) : ch.segments.length ? (
-              <ScrollView
-                ref={scroll}
-                contentContainerStyle={s.readingPaper}
-                onScrollBeginDrag={() => setFollow(false)}
-              >
-                {ch.segments.map((seg, i) => (
-                  <Pressable
-                    key={i}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Listen from ${seg.text.slice(0, 80)}`}
-                    onLayout={(e) => {
-                      paragraphY.current[i] = e.nativeEvent.layout.y;
-                    }}
-                    onPress={() => {
-                      seek(seg.start);
-                      player.play();
-                      setFollow(true);
-                    }}
-                    style={[s.passage, i === index && s.spoken]}
-                  >
-                    <Text
-                      style={[
-                        styleText,
-                        seg.text.length < 95 &&
-                          seg.text === seg.text.toUpperCase() &&
-                          s.passageHeading,
-                      ]}
-                    >
-                      {seg.text}
-                    </Text>
-                  </Pressable>
-                ))}
-                <View style={s.chapterEnd}>
-                  <Feather name="feather" color={colors.accent} size={22} />
-                </View>
-                {chapter < entry.book.chapters.length - 1 && (
-                  <Pressable
-                    style={s.nextChapter}
-                    onPress={() => load(chapter + 1, 0, status.playing)}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.eyebrow}>UP NEXT</Text>
-                      <Text style={s.nextTitle}>
-                        {entry.book.chapters[chapter + 1].title}
-                      </Text>
-                    </View>
-                    <Feather
-                      name="arrow-right"
-                      size={20}
-                      color={colors.accent}
-                    />
-                  </Pressable>
-                )}
-              </ScrollView>
+            ) : entry.book.chapters.some((c) => c.segments.length) ? (
+              <BookText
+                key={entry.book.id + ":" + readingKey}
+                book={entry.book}
+                chapter={chapter}
+                time={status.currentTime}
+                follow={follow}
+                onFollow={setFollow}
+                theme={theme}
+                onTheme={(t) => {
+                  setTheme(t);
+                  void store("theme", t);
+                }}
+                initialAnchor={
+                  readingAnchors.current[entry.book.id] ||
+                  progress[entry.book.id]?.reading
+                }
+                notes={notes}
+                onNoText={(sourcePage) => {
+                  setFollow(false);
+                  setPage(sourcePage);
+                  setMode("pdf");
+                }}
+                onListen={(target, t) => {
+                  if (target !== chapter) load(target, t, true);
+                  else {
+                    seek(t);
+                    player.play();
+                  }
+                  setFollow(true);
+                }}
+                onAnchor={(a) => {
+                  readingAnchors.current[entry.book.id] = a;
+                  if (!follow)
+                    setPage(
+                      entry.book.chapters[a.chapter]?.segments[a.segment]
+                        ?.page || page,
+                    );
+                  setProgress((old) => {
+                    const previous = old[entry.book.id] || {
+                      chapter,
+                      time: pending.current?.time ?? status.currentTime,
+                      page,
+                      updated: Date.now(),
+                    };
+                    const next = {
+                      ...old,
+                      [entry.book.id]: {
+                        ...previous,
+                        reading: a,
+                        updated: Date.now(),
+                      },
+                    };
+                    void store("progress", next);
+                    return next;
+                  });
+                }}
+                onAnnotate={(draft, kind) => {
+                  if (kind === "note") {
+                    setNoteDraft(draft);
+                    setNoteText("");
+                    setEditingNote(null);
+                    setSheet("notes");
+                    return;
+                  }
+                  const highlight: ReaderNote = {
+                    id:
+                      Date.now().toString(36) +
+                      "-" +
+                      Math.random().toString(36).slice(2),
+                    bookId: entry.book.id,
+                    body: draft.quote,
+                    created: Date.now(),
+                    kind,
+                    ...draft,
+                  };
+                  const next = [highlight, ...notes];
+                  void store("notes", next).then((ok) => {
+                    if (ok) {
+                      setNotes(next);
+                      setToast("A sentence to keep. Highlight saved.");
+                    }
+                  });
+                }}
+              />
             ) : (
               <View style={s.empty}>
                 <Text style={s.description}>
@@ -860,42 +909,44 @@ function PagechimeApp() {
               </View>
             )}
           </View>
-          <View style={s.pageNav}>
-            <Button
-              icon="chevron-left"
-              label="Previous PDF page"
-              styles={s}
-              disabled={page <= 1}
-              onPress={() => turn(page - 1)}
-            />
-            <Text style={s.small}>
-              Page {page} of {entry.book.pageCount}
-            </Text>
-            <Button
-              icon="chevron-right"
-              label="Next PDF page"
-              styles={s}
-              disabled={page >= entry.book.pageCount}
-              onPress={() => turn(page + 1)}
-            />
-            {ch.segments.length > 0 && (
-              <Pressable
-                style={[s.follow, follow && s.followOn]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: follow }}
-                onPress={() => setFollow(!follow)}
-              >
-                <Text
-                  style={[
-                    s.small,
-                    { color: follow ? colors.accent : colors.muted },
-                  ]}
+          {mode === "pdf" && (
+            <View style={s.pageNav}>
+              <Button
+                icon="chevron-left"
+                label="Previous PDF page"
+                styles={s}
+                disabled={page <= 1}
+                onPress={() => turn(page - 1)}
+              />
+              <Text style={s.small}>
+                Page {page} of {entry.book.pageCount}
+              </Text>
+              <Button
+                icon="chevron-right"
+                label="Next PDF page"
+                styles={s}
+                disabled={page >= entry.book.pageCount}
+                onPress={() => turn(page + 1)}
+              />
+              {ch.segments.length > 0 && (
+                <Pressable
+                  style={[s.follow, follow && s.followOn]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: follow }}
+                  onPress={() => setFollow(!follow)}
                 >
-                  {follow ? "● Follow audio" : "Follow audio"}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+                  <Text
+                    style={[
+                      s.small,
+                      { color: follow ? colors.accent : colors.muted },
+                    ]}
+                  >
+                    {follow ? "● Follow audio" : "Follow audio"}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </Animated.View>
       ) : null}
       {entry && ch && (
@@ -1098,10 +1149,13 @@ function PagechimeApp() {
                         <Pressable
                           style={{ flex: 1 }}
                           onPress={() => {
+                            if (m.reading)
+                              readingAnchors.current[m.bookId] = m.reading;
                             load(m.chapter, m.time, false);
+                            setReadingKey((k) => k + 1);
                             setPage(m.page);
                             setFollow(false);
-                            setMode("pdf");
+                            setMode(m.reading ? "text" : "pdf");
                             setReading(true);
                             setSheet("");
                           }}
@@ -1204,6 +1258,16 @@ function PagechimeApp() {
                 <Text style={s.muted}>A thought to keep, just for you.</Text>
                 {(entry || editingNote) && (
                   <>
+                    {noteDraft?.quote && (
+                      <Text
+                        style={[
+                          s.description,
+                          { fontStyle: "italic", marginTop: 16 },
+                        ]}
+                      >
+                        {noteDraft.quote}
+                      </Text>
+                    )}
                     <TextInput
                       accessibilityLabel="Your note"
                       multiline
@@ -1240,12 +1304,15 @@ function PagechimeApp() {
                               time: player.currentTime || 0,
                               body: noteText.trim(),
                               created: Date.now(),
+                              ...(noteDraft || {}),
+                              kind: "note",
                             };
                         const next = [n, ...notes.filter((x) => x.id !== n.id)];
                         if (await store("notes", next)) {
                           setNotes(next);
                           setNoteText("");
                           setEditingNote(null);
+                          setNoteDraft(null);
                           setToast("Your thought has been saved.");
                         }
                       }}
@@ -1283,9 +1350,16 @@ function PagechimeApp() {
                         onPress={() => {
                           const e = books.find((b) => b.book.id === n.bookId);
                           if (e) {
+                            if (n.segment !== undefined)
+                              readingAnchors.current[n.bookId] = {
+                                chapter: n.chapter,
+                                segment: n.segment,
+                                offset: n.offset || 0,
+                              };
                             load(n.chapter, n.time, false, e);
+                            setReadingKey((k) => k + 1);
                             setPage(n.page);
-                            setMode("pdf");
+                            setMode(n.segment !== undefined ? "text" : "pdf");
                             setFollow(false);
                             setReading(true);
                             setSheet("");

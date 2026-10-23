@@ -4,6 +4,11 @@ import { resolve, extname } from "node:path";
 import { createReaderApi } from "../server/reader-api.ts";
 import { proxyReader, authorizeMedia } from "../server/web-boundary.ts";
 import {
+  longBook,
+  mixedBook,
+  untimedBook,
+} from "../tests/fixtures/reading-books.ts";
+import {
   fixtureDatabase,
   testPassword,
 } from "../tests/fixtures/reader-database.ts";
@@ -86,7 +91,22 @@ http
           : path.endsWith(".pdf")
             ? "book.pdf"
             : "audio.wav";
-        body = await readFile(resolve("tests/fixtures", name));
+        // Isolated browser contexts choose a corpus without bypassing the real worker/auth path.
+        const corpus =
+          /(?:^|; )reader-test-corpus=(long|mixed|untimed)(?:;|$)/.exec(
+            req.headers.cookie || "",
+          )?.[1];
+        const variants = {
+          long: longBook,
+          mixed: mixedBook,
+          untimed: untimedBook,
+        };
+        body =
+          name === "book.json" && corpus
+            ? Buffer.from(
+                JSON.stringify(variants[corpus as keyof typeof variants]),
+              )
+            : await readFile(resolve("tests/fixtures", name));
         type = types[extname(name)];
       } else {
         let file = resolve(root, "." + path);
