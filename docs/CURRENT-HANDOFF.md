@@ -3,12 +3,12 @@
 Updated 2026-10-23.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-009","repository":"dn-lx/pagechime","base":"dev","branch":"feature/ebook-reading","pr":4,"status":"testing","last_verified_sha":"d94640fba0d6aee91b32b83530fb667ddaede6fc","next_step":"Finish native markup/Manifest runtime verification, exact-head gates and PR #4 dev merge. Netlify requires the owner to update this chat's environment; me-plus changes did not apply.","updated_at":"2026-10-23T21:40:10.131206+00:00"}
+{"task_id":null,"repository":null,"base":"dev","branch":null,"pr":null,"status":"idle","last_verified_sha":null,"next_step":null,"updated_at":"2026-10-23T21:44:58.126346+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
-## Active delivery
+## Development delivery
 
-REQ-009 / [PR #4](https://github.com/dn-lx/pagechime/pull/4) adds an interactive text reader to web and Expo on feature/ebook-reading. Checkpoint d94640f is pushed. Current dev a47df70 includes merged PR #3; its temporary branches were removed. Production PR #2 stays paused draft. Use dev as the only integration branch and the existing Netlify site; no production publish or duplicate project.
+REQ-009 / [PR #4](https://github.com/dn-lx/pagechime/pull/4) adds an interactive text reader to web and Expo on feature/ebook-reading. Source checkpoint d94640f and verification checkpoint e0d53d1 are pushed. The reader is complete; final candidate is prepared for exact-head CI/dev merge, with idle task state required before merge. Current dev a47df70 includes merged PR #3; its temporary branches were removed. Production PR #2 stays paused draft. Use dev as the only integration branch and the existing Netlify site; no production publish or duplicate project.
 
 Shared lossless pagination and anchors preserve reading independently of audio; both readers add appearance controls and quotation notes/highlights. Independent review approved server metadata validation and native context/escaping/navigation guards. Web saved-PDF and missing-follow-preference restore findings were fixed; ten new desktop/mobile reading regressions pass. Twenty unit/contracts, types, Next export and both full-content Hermes iOS/Android exports pass. All 986 Manifest passages across19 chapters retain every character at four layouts (2,273 pages checked). All fourteen new browser/native-markup checks,93 starter regressions and strict docs/adapters now pass. Actual Manifest opening/ending rendered on desktop/mobile with no page errors/overflow; screenshots inspected. Final exact-head CI remains pending. No signed native build/device test is claimed. See docs/plans/REQ-009-ebook-reading.md; existing advisory remains REQ-005.
 
@@ -16,7 +16,7 @@ Shared lossless pagination and anchors preserve reading independently of audio; 
 
 - GitHub canonical dn-lx/pagechime, same repository ID1431335742; owner renamed it manually.
 - Netlify pagechime, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Same site renamed in place, team login retained on all deploys. No upload/deploy succeeded; Git CD is not linked. The connector cannot upload/link Git. Private ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed remains unused/unpublished.
-- Me+ wbqnctrvxohxwiaignhg: isolated book_reader_* migrations20261023183634_book_reader_accounts /20261023185057_book_reader_payload_retention applied; other app data/auth untouched. Dedicated book-reader-api v2 is ACTIVE after deploying the independently reviewed optional quotation/reading validation from d94640f. Custom opaque sessions enforce authentication (verify_jwt=false intentionally); legacy metadata remains accepted. No DB/grant change for v2. Prior rollback SQL ownership/revocation/CAS/grant checks passed; positive hosted account verification/bootstrap is still pending. See docs/READER-ACCOUNTS.md.
+- Me+ wbqnctrvxohxwiaignhg: isolated book_reader_* migrations20261023183634_book_reader_accounts /20261023185057_book_reader_payload_retention applied; other app data/auth untouched. Dedicated book-reader-api v2 is ACTIVE after deploying the independently reviewed optional quotation/reading validation from d94640f. Custom opaque sessions enforce authentication (verify_jwt=false intentionally); legacy metadata remains accepted. No DB/grant change for v2. Prior rollback SQL ownership/revocation/CAS/grant checks passed; v2 public denied-path [contract run](https://github.com/dn-lx/pagechime/actions/runs/40028908946) passed. Positive hosted account verification/bootstrap is still pending. See docs/READER-ACCOUNTS.md.
 
 ## Deployment blocker
 

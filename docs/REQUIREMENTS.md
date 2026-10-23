@@ -59,7 +59,7 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 - Plan: docs/plans/REQ-008-pagechime.md. Netlify and GitHub canonical names/unchanged IDs and privacy/PR continuity are verified. Types,14 unit tests,93 starter checks,22 browser checks, both full-content native exports and web budget pass; desktop/mobile branding was inspected, including320–1440px wordmark geometry. Independent review found no blocker. No duplicate development site was created.
 
 
-## [ ] REQ-009 — Interactive book reading
+## [x] REQ-009 — Interactive book reading
 - Default to a reflowable Kindle-style text reader for timed books; original PDF is optional.
 - Turn reading pages with touch/buttons/keyboard, retain place independently of PDF pagination, and preserve text through font/viewport changes.
 - Offer readable serif/sans typography, text size, line spacing, page width, paper/sepia/night surfaces, focus mode and reduced-motion transitions.
@@ -68,3 +68,5 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 - Web and Expo share pagination/anchor semantics; preserve the full Manifest text and existing audio, imports, accounts, notes and bookmarks.
 - Acceptance: meaningful pagination/anchor tests, desktop/mobile browser reading/selection/appearance/persistence tests, accessibility and inspected runtime screenshots, web/native exports and performance checks. Native device/signing limitations remain explicit.
 - Plan: docs/plans/REQ-009-ebook-reading.md. Continue single Netlify project ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, now named pagechime by the owner; dev remains integration and prod stays paused.
+
+REQ-009 evidence: PR #4;20 unit/contracts,36 browser cases (22 existing and14 new), both full-content native exports, Next/types,93 starter checks,556/900KiB budget and independent review. Full Manifest is lossless across four reading layouts; real opening/ending screenshots were inspected on desktop/mobile. See docs/PAGECHIME-VERIFICATION.md for native/hosting limits. Netlify deployment and positive hosted account/media checks remain REQ-004/006/007.
