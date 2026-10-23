@@ -16,7 +16,7 @@ All five tables enable RLS and revoke PUBLIC/anon/authenticated grants. RPCs are
 
 ## First administrator
 
-After the website origin is ready, generate a private activation file outside the repository:
+One owner-only administrator activation invitation was prepared on 2026-10-24 and supplied privately. It is single use and expires after 48 hours; the owner must choose the username/password. No account or password has been created. Do not create a second invitation unless the first has expired or has been deliberately invalidated.\n\nFor a future replacement, generate a private activation file outside the repository:
 
 ```sh
 node scripts/create-reader-invite.mjs https://your-reader.netlify.app /tmp/reader-invite.json

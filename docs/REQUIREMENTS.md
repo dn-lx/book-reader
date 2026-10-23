@@ -71,9 +71,9 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 
 REQ-009 evidence: PR #4;20 unit/contracts,36 browser cases (22 existing and14 new), both full-content native exports, Next/types,93 starter checks,556/900KiB budget and independent review. Full Manifest is lossless across four reading layouts; real opening/ending screenshots were inspected on desktop/mobile. See docs/PAGECHIME-VERIFICATION.md for native/hosting limits. Netlify deployment and positive hosted account/media checks remain REQ-004/006/007.
 
-## [ ] REQ-010 — Develop-only workflow and branch deploy
+## [x] REQ-010 — Develop-only workflow and branch deploy
 - Create develop from the latest verified reader source and keep implementation on it.
 - CI and release-source safeguards use develop/main; promotion to main needs a later explicit owner instruction.
-- Verify a ready develop branch deploy on the existing private Netlify project, its source revision and hosted access behavior.
+- Verify a ready develop branch deploy on the existing Netlify project, its source revision and preserved private visitor gate. Live application-account/media behavior remains REQ-007.
 - Preserve historical branches and close superseded release PR #2 without merging.
-- Plan: docs/plans/REQ-010-develop-delivery.md.
+- Plan: docs/plans/REQ-010-develop-delivery.md. Evidence: develop created; CI and policy migrated; superseded PR #2 closed without merge; ready Netlify branch-deploy 6adbe48e6d265f521861abbc on 724444ec6cc5c34e38cc58af19e66cbf159e4c0a; main unchanged at 2396458e46609beb8c448221a647491fb90363c9. All five source suites passed on f99a2b224955f924886dff352922792f6af0ba3c; later exact-head checks remain separately recorded.
