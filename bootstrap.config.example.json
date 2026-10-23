@@ -5,8 +5,8 @@
   "repository": "owner/repository",
   "ownerTeam": "owner-or-team",
   "branches": {
-    "integration": "dev",
-    "production": "prod"
+    "integration": "develop",
+    "production": "main"
   },
   "architecture": {
     "frontend": "Not applicable",
@@ -18,7 +18,7 @@
   },
   "commands": {
     "install": "Not configured",
-    "dev": "Not configured",
+    "develop": "Not configured",
     "test": "Not configured",
     "build": "Not configured",
     "lint": "Not configured",

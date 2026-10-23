@@ -15,7 +15,7 @@ const config = {
   primaryUsers: "Test users",
   repository: "dn-lx/disposable-bootstrap-project",
   ownerTeam: "dn-lx",
-  branches: { integration: "dev", production: "prod" },
+  branches: { integration: "develop", production: "main" },
   architecture: {
     frontend: "React Native / Expo",
     backend: "Supabase Edge Functions",
@@ -72,6 +72,9 @@ test("full starter copy bootstraps and passes strict validation", async () => {
         ),
   });
 
+  // A copied active project task is not part of this disposable bootstrap fixture.
+  await writeFile(join(projectRoot, "docs/CURRENT-HANDOFF.md"), "# Current Handoff\n\n<!-- AGENT_TASK_STATE_START -->\n{\"task_id\":null,\"repository\":null,\"base\":\"develop\",\"branch\":null,\"pr\":null,\"status\":\"idle\",\"last_verified_sha\":null,\"next_step\":null,\"updated_at\":\"2026-10-24T00:00:00Z\"}\n<!-- AGENT_TASK_STATE_END -->\n", "utf8");
+
   const configPath = join(projectRoot, "bootstrap.e2e.json");
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 
@@ -113,13 +116,13 @@ test("full starter copy bootstraps and passes strict validation", async () => {
 
   const stackOutput = run(projectRoot, ["scripts/validate-agent-stack.mjs"]);
   assert.match(stackOutput, /Core agent stack valid:/);
-  assert.match(stackOutput, /branch policy dev → prod/);
+  assert.match(stackOutput, /branch policy develop → main/);
 
   const policy = JSON.parse(
     await readFile(join(projectRoot, ".agents/project-policy.json"), "utf8"),
   );
-  assert.equal(policy.branches.integration, "dev");
-  assert.equal(policy.branches.production, "prod");
+  assert.equal(policy.branches.integration, "develop");
+  assert.equal(policy.branches.production, "main");
 
   const memory = await readFile(
     join(projectRoot, "docs/PROJECT-MEMORY.md"),

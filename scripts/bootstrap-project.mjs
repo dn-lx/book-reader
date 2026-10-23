@@ -42,18 +42,18 @@ function normalizeConfig(input) {
   const slug = input.slug ? slugify(input.slug) : slugify(projectName);
   if (!slug) throw new Error("Could not derive a project slug");
   const integration = required(
-    input.branches?.integration ?? "dev",
+    input.branches?.integration ?? "develop",
     "branches.integration",
   );
   const production = required(
-    input.branches?.production ?? "prod",
+    input.branches?.production ?? "main",
     "branches.production",
   );
   if (integration === production)
     throw new Error("integration and production branches must differ");
-  if (integration !== "dev" || production !== "prod") {
+  if (integration !== "develop" || production !== "main") {
     throw new Error(
-      "Bootstrap supports dev → prod only; adapting branch names requires the repository migration in docs/BRANCH-LIFECYCLE.md",
+      "Bootstrap supports develop → main only; adapting branch names requires the repository migration in docs/BRANCH-LIFECYCLE.md",
     );
   }
 

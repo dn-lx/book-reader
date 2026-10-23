@@ -11,7 +11,7 @@ const config = {
   primaryUsers: "Authenticated end users",
   repository: "dn-lx/me-plus",
   ownerTeam: "dn-lx",
-  branches: { integration: "dev", production: "prod" },
+  branches: { integration: "develop", production: "main" },
   architecture: {
     backend: "Supabase Edge Functions",
     database: "PostgreSQL",
@@ -63,8 +63,8 @@ test("bootstrap generates deterministic project configuration and removes templa
   const policy = JSON.parse(
     await readFile(join(root, ".agents/project-policy.json"), "utf8"),
   );
-  assert.equal(policy.branches.integration, "dev");
-  assert.equal(policy.branches.production, "prod");
+  assert.equal(policy.branches.integration, "develop");
+  assert.equal(policy.branches.production, "main");
 
   const memory = await readFile(join(root, "docs/PROJECT-MEMORY.md"), "utf8");
   assert.match(memory, /Project name:\*\* Me Plus/);
@@ -105,7 +105,7 @@ test("bootstrap rejects invalid capability state and branch collision", async ()
   const root = await fixture();
   await assert.rejects(
     bootstrapProject(
-      { ...config, branches: { integration: "dev", production: "dev" } },
+      { ...config, branches: { integration: "develop", production: "develop" } },
       { root },
     ),
     /must differ/,
@@ -124,29 +124,29 @@ test("bootstrap trims branch names before comparing and writing them", async () 
   const result = await bootstrapProject(
     {
       ...config,
-      branches: { integration: " dev ", production: " prod " },
+      branches: { integration: " develop ", production: " main " },
     },
     { root },
   );
   assert.deepEqual(result.config.branches, {
-    integration: "dev",
-    production: "prod",
+    integration: "develop",
+    production: "main",
   });
   const policy = JSON.parse(
     await readFile(join(root, ".agents/project-policy.json"), "utf8"),
   );
-  assert.deepEqual(policy.branches.integration, "dev");
-  assert.deepEqual(policy.branches.production, "prod");
+  assert.deepEqual(policy.branches.integration, "develop");
+  assert.deepEqual(policy.branches.production, "main");
 });
 
 test("bootstrap rejects branch names that would leave fixed workflow gates inconsistent", async () => {
   const root = await fixture();
   await assert.rejects(
     bootstrapProject(
-      { ...config, branches: { integration: "develop", production: "main" } },
+      { ...config, branches: { integration: "staging", production: "release" } },
       { root },
     ),
-    /supports dev → prod only/,
+    /supports develop → main only/,
   );
   await assert.rejects(access(join(root, ".agents/project-policy.json")));
 });
