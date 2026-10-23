@@ -11,17 +11,17 @@ Node 24 and npm 11 are recommended.
 ```sh
 npm ci
 npm run prepare:assets
-npm run dev
-# In another terminal, for the native app:
+# Web authentication uses the Netlify API function; see docs/READER-ACCOUNTS.md.
+# For native development:
 npm run dev:mobile
 ```
 
-The public repository contains application code and a small original test fixture. The full Manifest PDF, transcript and narration are private build inputs and are intentionally excluded from Git. A clean checkout starts with an empty shelf; use **Add a book** to import a PDF and audio.
+The public repository contains application code and a small original test fixture. The full Manifest PDF, transcript and narration are private build inputs and are intentionally excluded from Git. A clean checkout starts with an empty shelf after account sign-in; use **Add a book** to import a PDF and audio. See [account/deployment setup](docs/READER-ACCOUNTS.md) for the first administrator and Netlify development configuration.
 
 ## What is included
 
 - Responsive library, reading view, original PDF, passage highlighting and page following.
-- Chapters, seeking, playback speed, bookmarks, device-local progress, paper/night themes and reduced motion.
+- Chapters, seeking, playback speed, account-owned bookmarks, notes and synced reading progress, paper/night themes and reduced motion.
 - Explicit offline downloads on the web, including audio range requests; imported books stay on the device.
 - Native Expo audio, local PDF rendering, file imports and bundled book support. Background playback is configured; device testing is required before store release. Native sleep timer requires Leaf to remain open.
 - Kokoro Emma narration is prepared for the private Manifest library. Google Neural2 is shown as **Setup needed** until separately generated; no Google credentials are included in either client.

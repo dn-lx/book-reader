@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-Planned: Me+ standalone reader accounts, personal notes and bookmarks, and Netlify development delivery.
+Added standalone Me+ username/password accounts, invitation/admin access controls, private notes, account-scoped bookmarks/progress and offline sync; Next/Expo sign-in and logout; server-side sessions and protected Netlify media/API configuration. Development deployment awaits Netlify CLI/network setup. Intended version impact: next minor release (0.2.0); no production release made.
 
 ## [0.1.0] - 2026-10-23
 

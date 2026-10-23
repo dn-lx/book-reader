@@ -2,7 +2,7 @@
 
 Reviewed 2026-10-23 by an independent read-only agent under AGENTS.md. Findings were repaired: imported-book availability during library/network failure; manual page/bookmark persistence; partial offline download cleanup; native import persistence/cleanup; PDF error recovery; legacy WebKit PDF compatibility; native per-source player identity and asynchronous generation guards; schema validation before rendering.
 
-No application secrets are committed or embedded in clients. There is no backend, payment flow, analytics or microphone requirement. The full book is restricted to ignored private build inputs and owner-private hosting. Imports use parsed PDF/text data, never injected HTML. Cached downloads reject redirects/HTML login pages. Native PDF WebView permits only its synthetic local document and blob worker URLs.
+No application secrets are committed or embedded in clients. The initial release had no backend; REQ-007 adds the isolated account API described below. No payment flow, analytics or microphone requirement. The full book is restricted to ignored private build inputs and owner-private hosting. Imports use parsed PDF/text data, never injected HTML. Cached downloads reject redirects/HTML login pages. Native PDF WebView permits only its synthetic local document and blob worker URLs.
 
 ## Open tooling advisory — REQ-005
 
@@ -13,3 +13,7 @@ The issue concerns RSA PKCS#1 v1.5 signature verification accepting extra nested
 The **blocking web release audit** is `npm audit --workspace @leaf/web --workspace @leaf/core --omit=dev --audit-level=high` and returns zero vulnerabilities. CI additionally runs the full tooling audit as a clearly named, non-blocking diagnostic job; it remains failing and visible until upstream remediation. The whole repository is not claimed audit-clean.
 
 Recheck when node-forge/Expo releases a fix, and before any signed native, app-store or Expo OTA delivery. REQ-005 remains open. Real-device, signing and OTA verification are outside the completed initial export evidence.
+
+## Custom reader accounts — REQ-007
+
+Independent review confirmed the final schema, custom authentication and client boundaries after repairing revocation races, null input/pagination, offline worker restarts, expiry and logout retry/storage failures, stale async callbacks and delayed cookie clearing. The payload/retention migration was separately cleared before application. Actual SQL and public hosted denied-path checks passed; account/browser/native export evidence and hosted limits are recorded in [reader account setup](READER-ACCOUNTS.md). The tables intentionally deny all anon/authenticated grants; service-role-only API calls derive ownership from verified opaque sessions. No Supabase Auth user is required. Netlify routing and successful hosted account flows must be checked after deployment; source/fixture checks do not establish those runtime outcomes.

@@ -86,3 +86,5 @@ Run `node scripts/validate-docs.mjs` to check documentation structure/references
 - `docs/NATIVE-DELIVERY.md` — Expo exports, native signing and device verification.
 - `docs/LEAF-VERIFICATION.md` — application verification evidence and limits.
 - `docs/SECURITY-REVIEW.md` — reviewed runtime boundaries and the tracked Expo tooling advisory.
+
+- `docs/READER-ACCOUNTS.md` — standalone Me+ accounts, first admin, Netlify setup and verification.

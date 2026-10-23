@@ -96,10 +96,11 @@ For production projects, adapt `docs/templates/OPERATIONS-RUNBOOK-TEMPLATE.md` o
 
 ## Leaf runtime identity and recovery
 
-- Owner-private static Site: appgprj_6adb96d58e38819192c282543ada4aed; leaf-read-and-listen.
-- Expected URL: https://leaf-read-and-listen.wavyflame1.chatgpt.site (claim live only after terminal deployment success).
-- Website source: dn-lx/book-reader, approved prod release; private Sites source checkout also includes ignored book build inputs. Deployment commit and version are recorded in Current Handoff after publishing.
-- Website artifact: Next.js static export, apps/web/out; private Site packages it as dist with .openai/hosting.json. version.json exposes the GitHub source revision and app version without secrets.
-- No server database, analytics project, application secret or Google synthesis service is connected. Local progress/imported files belong to browser/device storage. Native exports are not deployed store apps.
-- Smoke: owner-authenticated library, play/pause chapter1, chapter19/PDF page237, reload progress. Anonymous access must stop at the private hosting gate.
-- Recovery: roll back the Site to its previous saved version when one exists; for the initial release, contain by stopping access rather than inventing a prior working version. Rebuild/redeploy the last verified prod source and private inputs. Static rollback needs no database migration and does not delete device bookmarks.
+- Development host: Netlify book-reader-dnlx-dev, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Project exists with team login; no successful upload yet. Follow [reader account/deployment setup](READER-ACCOUNTS.md).
+- Website source: dn-lx/book-reader, feature→dev→approved prod. User currently authorized development deployment; production PR#2 stays paused. Keep the actual source SHA and ready deploy URL in Current Handoff after uploading. A branch name or successful build does not prove a branch deploy exists.
+- Website artifact: Next.js static export apps/web/out, Netlify BFF and protected-media edge function. Complete private Manifest inputs remain ignored, outside public Git. A clean Git build has no private catalog.
+- Database/API: existing Me+ project wbqnctrvxohxwiaignhg, isolated book_reader_* tables and book-reader-api v1. Custom accounts do not require Supabase Auth. Both schema migrations are additive and applied; avoid dropping them on application rollback because they hold reader notes/progress. Keep service-role credentials server-side.
+- The unused ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed is not a deployed runtime. Do not publish it or use its URL as the Netlify result.
+- Smoke: authenticated full library, chapter1/play-pause, chapter19/PDF page237, reload progress, notes CRUD/account switching, disable/re-enable session revocation, and anonymous media GET/HEAD/Range/encoded-path denial while inside the outer Netlify gate. Then evaluate visibility for intended reader accounts.
+- Recovery: contain by retaining the outer team gate; fix forward and deploy a verified dev revision. Do not claim an initial previous working deploy. Failed Netlify deploys do not publish. Before a future app rollback, verify its compatibility with custom sessions and the retained tables; never revert to an unguarded static reader over private media.
+- Provider backup/restore settings for Me+ were not changed or restore-tested in this increment. Native exports are not signed/store apps. No analytics, payment or Google synthesis connection is enabled.

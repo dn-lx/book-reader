@@ -51,6 +51,7 @@ type Scope = {
   store: (key: string, value: unknown) => Promise<boolean>;
   logout: () => Promise<void>;
   syncMessage: string;
+  keepLocalChanges: () => Promise<void>;
 };
 const Context = createContext<Scope | null>(null);
 export function useReaderAccount() {
@@ -190,6 +191,10 @@ export default function ReaderAccountGate({
       store,
       logout: async () => {
         await signOut(s.token, attempt);
+      },
+      keepLocalChanges: async () => {
+        await sync.keepLocalChanges();
+        setSyncMessage(sync.error);
       },
     });
     setLoading(false);

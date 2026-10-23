@@ -46,3 +46,5 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 - Readers can create/edit/delete notes at a passage/page. Administrators can provision and disable access without sending unsolicited messages.
 - Acceptance: independent security review; two-account ownership/negative-path tests; browser login, notes, logout/switch and offline-isolation checks; native types/exports with device limits stated.
 - Plan: docs/plans/REQ-007-reader-accounts.md.
+
+REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and tested; web/native source, private notes, scoped offline data, revocation and fixture flows pass. Actual Netlify deployment/media routing and positive hosted account verification remain pending CLI/network setup. See docs/READER-ACCOUNTS.md for evidence and precise remaining steps. Do not mark these items complete from source checks alone.

@@ -125,7 +125,8 @@ export default function App() {
   );
 }
 function LeafApp() {
-  const { session, read, store, api, logout, syncMessage } = useReaderAccount();
+  const { session, read, store, api, logout, syncMessage, keepLocalChanges } =
+    useReaderAccount();
   const [notes, setNotes] = useState<ReaderNote[]>([]),
     [noteText, setNoteText] = useState(""),
     [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
@@ -1326,6 +1327,17 @@ function LeafApp() {
                   account. Imported files stay on this device.
                 </Text>
                 {!!syncMessage && <Text style={s.muted}>{syncMessage}</Text>}
+                {syncMessage.includes("another device") && (
+                  <Pressable
+                    onPress={() => {
+                      void keepLocalChanges().catch((e) => setToast(e.message));
+                    }}
+                  >
+                    <Text style={[s.muted, { paddingVertical: 15 }]}>
+                      Keep changes from this device
+                    </Text>
+                  </Pressable>
+                )}
                 {session.account.role === "admin" && (
                   <Text style={s.muted}>
                     Manage invitations and library access on the website.
