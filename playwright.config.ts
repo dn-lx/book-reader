@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "node scripts/serve-test.mjs",
+    command: "npx tsx scripts/serve-test.mts",
     url: "http://localhost:4174",
     reuseExistingServer: !process.env.CI,
   },

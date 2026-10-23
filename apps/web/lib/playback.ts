@@ -7,9 +7,10 @@ import {
   globalPosition,
   locatePosition,
   segmentAt,
-} from "@leaf/core";
-import { readSaved, writeSaved } from "./storage";
-export function usePlayback(notify: (s: string) => void) {
+} from "@pagechime/core";
+import type { ReaderStorage } from "./storage";
+export function usePlayback(notify: (s: string) => void,storage:ReaderStorage) {
+  const {readSaved,writeSaved}=storage;
   const [book, setBook] = useState<Book | null>(null),
     [chapter, setChapter] = useState(0),
     [time, setTime] = useState(0),

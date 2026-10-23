@@ -35,7 +35,7 @@ Load this file only when the correct specialist path is not already obvious. Do 
 | Dead/unused code | `code-hygiene` |
 | Dependency upgrades/advisories | `dependency-maintenance` |
 | Measured optional compression | `headroom-pilot` |
-| Project-specific durable guidance | `leaf-read-listen` |
+| Project-specific durable guidance | `pagechime` |
 
 ## Fast-path rule
 

@@ -202,3 +202,5 @@ export function validateBook(value: unknown): Book {
     duration: chapters.reduce((n, c) => n + c.duration, 0),
   };
 }
+
+export * from './reader-account';

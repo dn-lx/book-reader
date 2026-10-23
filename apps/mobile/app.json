@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Leaf",
-    "slug": "leaf-read-listen",
+    "name": "Pagechime",
+    "slug": "pagechime",
     "version": "0.1.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,10 @@
       "image": "./assets/icon.png",
       "resizeMode": "contain"
     },
-    "ios": { "supportsTablet": true, "bundleIdentifier": "app.dnlx.leaf" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.dnlx.leaf"
+    },
     "android": {
       "package": "app.dnlx.leaf",
       "adaptiveIcon": {
@@ -29,8 +32,11 @@
           "enableBackgroundRecording": false
         }
       ],
-      "expo-document-picker"
+      "expo-document-picker",
+      "expo-secure-store"
     ],
-    "assetBundlePatterns": ["assets/**/*"]
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ]
   }
 }

@@ -24,7 +24,7 @@ copy(source, dest);
 const b = JSON.parse(readFileSync(join(source, "book.json")));
 writeFileSync(
   join(root, "apps/mobile/assets/catalog.generated.ts"),
-  `import type {Book} from '@leaf/core';\nexport const catalog:{book:Book;audio:number[];pdf:number;cover:number}[]=[{book:require('./books/manifest/book.json'),audio:[${b.chapters.map((c) => `require('./books/manifest/audio/${c.file}')`).join(",")}],pdf:require('./books/manifest/book.pdf'),cover:require('./books/manifest/cover.webp')}];\n`,
+  `import type {Book} from '@pagechime/core';\nexport const catalog:{book:Book;audio:number[];pdf:number;cover:number}[]=[{book:require('./books/manifest/book.json'),audio:[${b.chapters.map((c) => `require('./books/manifest/audio/${c.file}')`).join(",")}],pdf:require('./books/manifest/book.pdf'),cover:require('./books/manifest/cover.webp')}];\n`,
 );
 console.log(
   "Bundled private mobile book inputs:",

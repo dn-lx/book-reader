@@ -72,9 +72,9 @@
         "npm",
         "audit",
         "--workspace",
-        "@leaf/web",
+        "@pagechime/web",
         "--workspace",
-        "@leaf/core",
+        "@pagechime/core",
         "--omit=dev",
         "--audit-level=high"
       ],
