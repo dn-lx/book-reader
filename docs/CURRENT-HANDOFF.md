@@ -3,12 +3,12 @@
 Updated 2026-10-23.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":null,"repository":null,"base":"dev","branch":null,"pr":null,"status":"idle","last_verified_sha":null,"next_step":null,"updated_at":"2026-10-23T20:03:38.281658Z"}
+{"task_id":"REQ-009","repository":"dn-lx/pagechime","base":"dev","branch":"feature/ebook-reading","pr":null,"status":"planning","last_verified_sha":"a47df70064defa7d4e8cf40109304e1b6ddb7d92","next_step":"Open draft PR and implement the interactive text reader per docs/plans/REQ-009-ebook-reading.md. Netlify remains blocked by workspace networking.","updated_at":"2026-10-23T21:10:14.780368+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Development delivery
 
-PR #3 targets dev with standalone Me+ reader accounts and the Pagechime identity update. Final candidate is prepared for exact-head CI and dev merge. Production PR #2 remains paused draft; do not publish prod. Keep one development site, pagechime-dev, and dev as the single integration branch.
+PR #3 merged into dev a47df70 with all six final-head workflows passing. Both merged temporary branches were removed. REQ-009 now implements the user-requested interactive text reader on feature/ebook-reading. Production PR #2 remains paused draft; do not publish prod. Keep one development site, pagechime, and dev as the single integration branch.
 
 Local verification: types,14 unit/core tests,93 starter checks, strict docs/agent adapters, Next export and550KiB/900KiB budget pass. All22 desktop/mobile browser checks pass, including notes/account isolation, offline sync and worker/logout failure paths. Pagechime sign-in/library screenshots were inspected on desktop and mobile; wordmark geometry passed at320/390/768/820/1024/1440px with no overflow/close-button collision or page errors. Both full-content iOS/Android Hermes exports pass. The renamed native PDF bridge loads a two-page fixture and renders both pages in Chromium. Native signed/device/store layout and installs remain unverified. Independent source/security review found no blocker. Expo tooling advisory remains REQ-005.
 
@@ -20,7 +20,7 @@ Netlify upload/deployment is still blocked by managed network/CLI authorization.
 - Deployed dedicated book-reader-api Edge Function v1 with custom opaque-session authentication, verify_jwt=false. Built-in privileged environment stays server-side.
 - Rolled-back real SQL checks passed single-use invitation, CAS, session generation revocation, anon table SELECT denial, authenticated RPC denial and10,000-character Unicode note. No real user/bootstrap invite created. All client table/function grants are denied. Advisors' RLS-without-policy/unused-index INFO is intentional for server-only/new tables.
 - Hosted backend [contract run](https://github.com/dn-lx/pagechime/actions/runs/40007820279) passed real401/400 contracts, including unknown-user login through the live DB. Positive account HTTP flows still need verification.
-- Netlify site73688a4b-90ab-4eac-be6d-ef305f33ebc3, pagechime-dev, teamdon-alex-perera, is created and requires team login on all deploys. No upload/deploy succeeded. Validate reader media paths inside that outer gate before opening visibility for intended readers. Git branch deploy/CD is not configured; `--context branch-deploy` is not a real branch deploy.
+- Netlify site73688a4b-90ab-4eac-be6d-ef305f33ebc3, pagechime, teamdon-alex-perera, is created and requires team login on all deploys. No upload/deploy succeeded. Validate reader media paths inside that outer gate before opening visibility for intended readers. Git branch deploy/CD is not configured; `--context branch-deploy` is not a real branch deploy.
 - Private ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed remains unused/unpublished. User selected Netlify; do not publish that Site.
 
 ## Content and completed downloads
@@ -43,7 +43,7 @@ Resume with docs/READER-ACCOUNTS.md, current source/PR checks and independent re
 
 ## 2026-10-23 Pagechime rename
 
-The same Netlify site ID was renamed to **pagechime-dev** and read back under team don-alex-perera with team-login protection still enabled for all deploys. Dashboard: https://app.netlify.com/projects/pagechime-dev. No deploy was uploaded, no duplicate site was created, and production PR #2 stays paused.
+The same Netlify site ID was renamed to **pagechime** and read back under team don-alex-perera with team-login protection still enabled for all deploys. Dashboard: https://app.netlify.com/projects/pagechime. No deploy was uploaded, no duplicate site was created, and production PR #2 stays paused.
 
 The user renamed the existing GitHub repository to **dn-lx/pagechime** manually. Readback verified the same repository ID1431335742, PR #3 still open/draft targeting dev with the same source head, and production PR #2 still paused draft. The local origin and maintained repository links now use the canonical new URL. The backend workflow guard uses dn-lx/pagechime. No second repository was created.
 
@@ -52,3 +52,5 @@ Keep the legacy `leaf.*` local storage/IndexedDB/cache names and `app.dnlx.leaf`
 Current managed networking still allows package-manager hosts only; Netlify CLI authorization/deployment remains blocked. Do not bypass that policy or represent a local export as a hosted deploy.
 
 Recovery is complete: forward repair3f653c5 restored the entire source tree (256 tracked files; tree00d751f150c32e5227f8b7ead07d8d43cbd9f67d) after incomplete documentation trees were created in e2fcc9b/c685e0c. No deployment or integration branch changed. The exact historical Gitleaks exception is independently reviewed and the full history scan passed; retain all other scanning rules.
+
+Owner renamed the same Netlify site to pagechime; connector readback confirms ID/team/privacy unchanged. Workspace spec44 still permits only package-manager hosts and an actual Netlify request receives proxy403. User was asked to apply the necessary workspace allowlist while reader implementation continues.

@@ -57,3 +57,14 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 - Preserve existing accounts, notes/bookmarks, pending logout and account-scoped offline data. Keep deployed API/database and native application identities stable.
 - Acceptance: web/native checks and exports, desktop/mobile visual verification, independent review and readback of external identities/privacy settings.
 - Plan: docs/plans/REQ-008-pagechime.md. Netlify and GitHub canonical names/unchanged IDs and privacy/PR continuity are verified. Types,14 unit tests,93 starter checks,22 browser checks, both full-content native exports and web budget pass; desktop/mobile branding was inspected, including320–1440px wordmark geometry. Independent review found no blocker. No duplicate development site was created.
+
+
+## [ ] REQ-009 — Interactive book reading
+- Default to a reflowable Kindle-style text reader for timed books; original PDF is optional.
+- Turn reading pages with touch/buttons/keyboard, retain place independently of PDF pagination, and preserve text through font/viewport changes.
+- Offer readable serif/sans typography, text size, line spacing, page width, paper/sepia/night surfaces, focus mode and reduced-motion transitions.
+- Follow narrated passages; manual page turns pause following without losing audio position. Resume following explicitly.
+- Readers can select a quotation, highlight it or attach a note. Notes/highlights and reading place stay account-specific and sync through the existing API.
+- Web and Expo share pagination/anchor semantics; preserve the full Manifest text and existing audio, imports, accounts, notes and bookmarks.
+- Acceptance: meaningful pagination/anchor tests, desktop/mobile browser reading/selection/appearance/persistence tests, accessibility and inspected runtime screenshots, web/native exports and performance checks. Native device/signing limitations remain explicit.
+- Plan: docs/plans/REQ-009-ebook-reading.md. Continue single Netlify project ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, now named pagechime by the owner; dev remains integration and prod stays paused.
