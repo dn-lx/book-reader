@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.1.0 — Initial Leaf reader
+## 0.1.0 — 2026-10-23
 
-Planned first release: Next.js reading room and Expo native app, complete Manifest read-along, passage highlighting, original PDF, chapters, bookmarks, offline library and additional book imports. Built on dn-lx/agent-project-starter. Completion is tracked by REQ-001–004 and verification evidence.
+Initial Leaf read-and-listen application: Next.js website and Expo native iOS/Android source, shared book timing/schema, complete private Manifest narration, original PDF and text reading, chapters, seeking, speed, bookmarks, saved progress, paper/night themes, offline web downloads and local book imports. British female Kokoro voice is ready in private book inputs; Google Neural2 remains a visible setup option with a local generation preflight. Built on Agent Project Starter. Native exports are verified separately from signing/device/store release.
