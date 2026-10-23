@@ -1,4 +1,0 @@
-project_id = "book-reader"
-[functions.book-reader-api]
-# Opaque custom reader sessions are verified inside the handler, not Supabase Auth JWTs.
-verify_jwt = false

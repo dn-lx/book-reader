@@ -17,7 +17,7 @@ The user asked for connection setup steps and received them: allow api.netlify.c
 ## Verified external writes
 
 - Me+ project wbqnctrvxohxwiaignhg: applied migrations20261023183634_book_reader_accounts and20261023185057_book_reader_payload_retention after independent review. Added only book_reader_* tables/RPCs; no auth.users, profiles or unrelated app changes.
-- Deployed new book-reader-api Edge Function v1, IDf61b725d-3ab2-45ae-99c6-71dbe15093ac; custom opaque-session authentication, verify_jwt=false. Built-in privileged environment stays server-side.
+- Deployed new book-reader-api Edge Function v1, resource UUID `f61b725d-3ab2-45ae-99c6-71dbe15093ac`; custom opaque-session authentication, verify_jwt=false. Built-in privileged environment stays server-side.
 - Rolled-back real SQL checks passed single-use invitation, CAS, session generation revocation, anon table SELECT denial, authenticated RPC denial and10,000-character Unicode note. No real user/bootstrap invite created. All client table/function grants are denied. Advisors' RLS-without-policy/unused-index INFO is intentional for server-only/new tables.
 - Hosted backend [contract run](https://github.com/dn-lx/book-reader/actions/runs/40007820279) passed real401/400 contracts, including unknown-user login through the live DB. Positive account HTTP flows still need verification.
 - Netlify site73688a4b-90ab-4eac-be6d-ef305f33ebc3, book-reader-dnlx-dev, teamdon-alex-perera, is created and requires team login on all deploys. No upload/deploy succeeded. Validate reader media paths inside that outer gate before opening visibility for intended readers. Git branch deploy/CD is not configured; `--context branch-deploy` is not a real branch deploy.
@@ -39,3 +39,12 @@ Working name Leaf is temporary because existing readers use it. User rejected Fo
 ## Finish safely
 
 Resume with docs/READER-ACCOUNTS.md, current source/PR checks and independent review. First-admin bootstrap uses scripts/create-reader-invite.mjs after the final website origin is known; keep raw invitation outside public Git. Complete actual Netlify routing tests (anonymous GET/HEAD/Range and encoded paths), real-account notes/access tests, ready deploy URL and dev source revision. Before merging PR #3, reset task state to idle in the final candidate, rerun its checks, merge into dev only and clean the feature branch. Keep acceptance REQ-006/007 unchecked until remaining hosted criteria are verified.
+
+
+## 2026-10-23 naming and connection follow-up
+
+User now requests multiple naming candidates with meanings before naming the project everywhere. No replacement name selected; do not apply a provisional rebrand. Reverli.com is registered according to live Whois retrieval, so do not call it available. Search results also revealed conflicts for Reverune, Liltmere, Morrowleaf, Sonavra, Fablewell, Syllune, Liorune, Folivra, Verlumi, Fablekin and Taleweft. Candidate screening is ongoing.
+
+Runtime updated to network spec33, but it still has only the package_managers preset and no custom allowed hosts. Actual Supabase request still returns proxy403. Netlify CLI authorization cannot start until its hosts are allowed. Connected Netlify project read works; no deployment is verified.
+
+All latest-head Application/backend/agent/version checks passed on27f8632. Security failed because Gitleaks interpreted the public Supabase function resource UUID in line20 as a generic API key. Independent reviewer confirmed there is no credential. Added only that exact historical finding to .gitleaksignore with rationale, retained all scanning rules, and reformatted the resource reference. The tracked Expo tooling diagnostic remains separate; blocking web/core dependency audit and Semgrep passed.
