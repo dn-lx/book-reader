@@ -62,10 +62,12 @@ export function findLegacyBranchTerms(content, integration, production) {
     (match) => match[1],
   );
   for (const span of codeSpans) {
+    // Script names such as npm run dev:mobile are not Git branch references.
+    const branchSpan = span.replace(/\b(?:npm|pnpm)\s+run\s+[\w:.-]+/g, "").replace(/\byarn\s+[\w:.-]+/g, "");
     for (const branch of knownBranchNames) {
       if (configured.has(branch)) continue;
       if (
-        new RegExp(`(^|[^A-Za-z0-9_.-])${branch}([^A-Za-z0-9_.-]|$)`).test(span)
+        new RegExp(`(^|[^A-Za-z0-9_.-])${branch}([^A-Za-z0-9_.-]|$)`).test(branchSpan)
       )
         findings.add(branch);
     }

@@ -38,7 +38,7 @@ export function extractTaskState(text) {
   }
 }
 
-export function validateTaskState(state, expectedBase = null) {
+export function validateTaskState(state, expectedBase = null, { allowIntegrationWork = false } = {}) {
   const errors = [];
   if (!state || typeof state !== "object" || Array.isArray(state))
     return ["task state must be a JSON object"];
@@ -67,10 +67,11 @@ export function validateTaskState(state, expectedBase = null) {
       errors.push("repository must be owner/name");
     if (typeof state.branch !== "string" || !state.branch.trim())
       errors.push("branch is required");
-    if (state.branch === state.base)
+    const directIntegration = allowIntegrationWork === true && expectedBase !== null && state.base === expectedBase && state.branch === expectedBase && state.pr === null;
+    if (state.branch === state.base && !directIntegration)
       errors.push("working branch must differ from base");
 
-    const prRequired = !["planning", "cancelled"].includes(state.status);
+    const prRequired = !directIntegration && !["planning", "cancelled"].includes(state.status);
     if (prRequired && (!Number.isInteger(state.pr) || state.pr <= 0))
       errors.push(
         `pr must be a positive integer while status is ${state.status}`,
@@ -112,10 +113,11 @@ export function validateTaskState(state, expectedBase = null) {
 export async function checkTaskState(
   path = "docs/CURRENT-HANDOFF.md",
   expectedBase = null,
+  options = {},
 ) {
   const text = await readFile(path, "utf8");
   const state = extractTaskState(text);
-  const errors = validateTaskState(state, expectedBase);
+  const errors = validateTaskState(state, expectedBase, options);
   if (errors.length) {
     for (const error of errors) console.error(`Task state error: ${error}`);
     return { ok: false, state, errors };
@@ -137,6 +139,7 @@ if (isMain) {
     pathArgIndex >= 0
       ? process.argv[pathArgIndex + 1]
       : "docs/CURRENT-HANDOFF.md";
-  const { ok } = await checkTaskState(path);
+  const policy = JSON.parse(await readFile(".agents/project-policy.json", "utf8"));
+  const { ok } = await checkTaskState(path, policy.branches.integration, { allowIntegrationWork: policy.continuity?.direct_integration_work === true });
   if (process.argv.includes("--check") && !ok) process.exit(1);
 }

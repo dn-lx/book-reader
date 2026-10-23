@@ -34,7 +34,7 @@ The authorized project is `pagechime`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`
 
 The Netlify connector can manage projects/access settings, but does not expose upload or Git-link operations. CLI linking currently reports **Authentication required**. The managed workspace only allows package-manager hosts. Enable the supported network configuration for `api.netlify.com`, `app.netlify.com`, the resulting `*.netlify.app` deployment and `wbqnctrvxohxwiaignhg.supabase.co`, then authenticate Netlify CLI through its normal browser authorization. Do not paste a token into chat or Git.
 
-For a local prebuilt development preview, after checking out the verified `dev` revision and restoring private inputs:
+For a local prebuilt development preview, after checking out the verified `develop` revision and restoring private inputs:
 
 ```sh
 npm ci
@@ -43,9 +43,9 @@ npx netlify-cli@27.14.2 link --filter @pagechime/web --id 73688a4b-90ab-4eac-be6
 npx netlify-cli@27.14.2 deploy --filter @pagechime/web --dir apps/web/out --no-build --context branch-deploy
 ```
 
-Confirm the CLI's resolved publish/functions/edge directories before upload. `--context branch-deploy` selects environment context; it does not create a Git branch deploy. A real `dev` branch subdomain requires linking Git and enabling that branch in Netlify. An alias does not establish that configuration. Keep these delivery states distinct in reporting.
+Confirm the CLI's resolved publish/functions/edge directories before upload. `--context branch-deploy` selects environment context; it does not create a Git branch deploy. A real `develop` branch subdomain requires linking Git and enabling that branch in Netlify. An alias does not establish that configuration. Keep these delivery states distinct in reporting.
 
-Keep the outer Netlify team-login gate until the app/media checks below pass. Then allow intended readers through the site visibility layer while preserving reader authentication. Do not publish `prod` or the unrelated unused ChatGPT Site.
+Keep the outer Netlify team-login gate until the app/media checks below pass. Then allow intended readers through the site visibility layer while preserving reader authentication. Do not publish `main` or the unrelated unused ChatGPT Site.
 
 ## Verification evidence and remaining hosted checks
 

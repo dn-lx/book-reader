@@ -21,7 +21,7 @@ The bootstrap generator must not invent credentials, runtime identities, product
 ## Remaining project setup
 
 1. Replace starter examples in `docs/REQUIREMENTS.md` with accepted project requirements and acceptance criteria.
-2. Confirm `dev` and production `prod` (or the configured equivalents) exist and are protected; configure task continuity/draft PR recovery.
+2. Confirm `develop` and production `main` (or the configured equivalents) exist and are protected; configure task continuity/draft PR recovery.
 3. Add actual project CI/test/build commands; use `test-engineering` when the project needs a harness and do not leave fake-green CI.
 4. For frontend projects, define the browser/runtime verification matrix, theme variants and semantic color/spacing token source; add Playwright/browser tooling where useful.
 5. Define measurable performance budgets when performance is user-critical, and define a privacy-safe analytics event contract when analytics is enabled.

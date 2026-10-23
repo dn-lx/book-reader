@@ -8,7 +8,7 @@ Use for a project with production runtime/data. Store only non-secret identifier
 | --- | --- | --- | --- | --- |
 | Local | TODO | TODO | TODO | TODO |
 | Preview/staging | TODO / Not used | TODO | TODO | TODO |
-| Production | `prod` / adapted production branch | TODO | TODO | TODO |
+| Production | `main` / adapted production branch | TODO | TODO | TODO |
 
 ## Deployment verification
 

@@ -21,18 +21,18 @@ For claims about **current implementation**, source/tests/runtime evidence overr
 
 ## Branch and release rules
 
-- `dev` is the development integration branch.
-- Ordinary work starts from current `dev` on a focused `feature/*`, `fix/*` or `chore/*` branch.
-- Feature/fix/chore branches merge into `dev`, never directly into `prod`.
-- `prod` is production/release.
-- Only this repository's `dev` branch may merge into `prod`, through the release workflow and explicit production approval.
-- Never push directly to `prod`, force-push it, or bypass Git history with an ad-hoc production deployment.
+- `develop` is the development integration branch.
+- Current owner directive (2026-10-24): all implementation stays directly on `develop`. Do not create another working branch or open a release PR until the owner requests promotion. The explicit `continuity.direct_integration_work` policy enables this development phase.
+- Feature/fix/chore branches merge into `develop`, never directly into `main`.
+- `main` is production/release.
+- Only this repository's `develop` branch may merge into `main`, after the owner explicitly asks at the end of development. Do not infer that approval from a request to finish the project or deploy development.
+- Never push directly to `main`, force-push it, or bypass Git history with an ad-hoc production deployment.
 
 Read `.agents/skills/release-workflow/SKILL.md` before creating/merging a production PR or changing production deployment policy.
 
 ## Branch cleanup and versioning
 
-Read `docs/BRANCH-LIFECYCLE.md` and `docs/VERSIONING.md` for lifecycle work. Only `prod` and `dev` are permanent. Verify completed temporary branches are deleted after merge; preserve active/unmerged work. Every material change must identify version impact and update CHANGELOG.md when user-visible. Release preparation updates VERSION and dated notes; publish immutable tags only after approved dev → prod release. All host adapters inherit these rules.
+Read `docs/BRANCH-LIFECYCLE.md` and `docs/VERSIONING.md` for lifecycle work. Only `main` and `develop` are permanent. Verify completed temporary branches are deleted after merge; preserve active/unmerged work. Every material change must identify version impact and update CHANGELOG.md when user-visible. Release preparation updates VERSION and dated notes; publish immutable tags only after approved develop → main release. All host adapters inherit these rules.
 
 ## Engineering principles
 
@@ -42,7 +42,7 @@ Read `docs/BRANCH-LIFECYCLE.md` and `docs/VERSIONING.md` for lifecycle work. Onl
 - Do not weaken tests, authorization, validation, error handling or secret boundaries to get green CI.
 - Never expose secrets, private tokens, privileged keys or customer/user data in browser code, logs, prompts or Git.
 - Treat external systems as shared/live unless documentation proves the environment is isolated.
-- Automated agents may create branches and PRs; production merge remains human-controlled.
+- Current development uses only `develop`; promotion to `main` remains owner-controlled.
 
 ## Agent-independent orchestration
 
@@ -143,7 +143,7 @@ For Claude Code or Gemini CLI setup, use `docs/CLAUDE-GEMINI-SETUP.md`. Keep `.a
 
 ## Universal continuity
 
-An open branch is not automatically an active task. For non-trivial work, bind the task to one writable branch and a draft/open PR, and keep the machine-readable task state in `docs/CURRENT-HANDOFF.md` valid. GitHub/source/check evidence overrides handoff or chat memory.
+An open branch is not automatically an active task. For non-trivial work, bind the task to the writable branch and keep the machine-readable task state in `docs/CURRENT-HANDOFF.md` valid. During the owner-authorized direct integration phase, use base/branch `develop` and a null PR; otherwise use the normal task branch and draft/open PR. GitHub/source/check evidence overrides handoff or chat memory.
 
 At the beginning of a new coding-agent session, read Project Memory and Current Handoff. Before ending unfinished work, or after a material architectural decision/external side effect, update `docs/CURRENT-HANDOFF.md`.
 

@@ -13,7 +13,7 @@
 - **Native:** Expo 58 / React Native for iOS and Android; native Expo audio, platform controls, shared text pagination/anchors, selectable text in a restricted WebView and optional offline PDF.js. Native bundles are separate from signed installs.
 - **Shared core:** packages/core exports typed book/chapters/passages, schema validation, seeking, timing selection and lossless reading pagination/highlights.
 - **Storage:** Web IndexedDB for imported books; localStorage for progress, bookmarks/preferences; Cache Storage for explicit downloads. Native document directory plus AsyncStorage. Imported files and preferences are device local; bookmarks, notes and reading positions sync through a custom Me+ API. No analytics.
-- **Hosting:** Netlify development project pagechime, configured but deployment blocked by CLI/network setup. The unused private ChatGPT Site is not deployed. Code is public; private book media/transcripts are ignored build inputs.
+- **Hosting:** Netlify development project pagechime, existing project; authenticated browser linking/develop branch deployment in progress. The unused private ChatGPT Site is not deployed. Code is public; private book media/transcripts are ignored build inputs.
 - **Voices:** Full private Kokoro Emma British female narration; Google Neural2 setup pending at the user's request. Optional generation runs locally with Google Cloud ADC, never in either client. Timings are generated separately for each voice.
 
 ## Important paths
@@ -43,7 +43,7 @@
 
 ## Runtime and security boundaries
 
-Code promotion is feature → dev → prod. Runtime identity and rollback are recorded in Operations and Current Handoff. Me+ standalone account tables and a dedicated Edge Function verify custom opaque sessions, independently of Supabase Auth. Netlify BFF uses HttpOnly cookies; native uses SecureStore. Media is gated at Netlify edge requests. No privileged client credential. See docs/READER-ACCOUNTS.md. Imported data stays on-device; deleting browser/app storage removes it. Failed offline downloads and failed native imports clean up their partial files. No payments, telemetry or microphone access.
+Code promotion is feature → develop → main. Runtime identity and rollback are recorded in Operations and Current Handoff. Me+ standalone account tables and a dedicated Edge Function verify custom opaque sessions, independently of Supabase Auth. Netlify BFF uses HttpOnly cookies; native uses SecureStore. Media is gated at Netlify edge requests. No privileged client credential. See docs/READER-ACCOUNTS.md. Imported data stays on-device; deleting browser/app storage removes it. Failed offline downloads and failed native imports clean up their partial files. No payments, telemetry or microphone access.
 
 Source/tests/runtime evidence override stale documentation. See docs/CONTENT-AND-VOICES.md, docs/NATIVE-DELIVERY.md and docs/PAGECHIME-VERIFICATION.md.
 

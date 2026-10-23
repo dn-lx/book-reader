@@ -1,6 +1,6 @@
 # Pagechime requirements
 
-Accepted scope: Next.js website and Expo React Native app, based on Agent Project Starter. Updated 2026-10-23.
+Accepted scope: Next.js website and Expo React Native app, based on Agent Project Starter. Updated 2026-10-24.
 
 ## [x] REQ-001 — Complete Manifest read-along
 - All 19 narration chapters and all PDF pages are available from beginning to end.
@@ -35,7 +35,7 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 - Evidence and reachability assessment: docs/SECURITY-REVIEW.md.
 
 ## [ ] REQ-006 — Netlify development delivery
-- Deploy from the existing dev integration branch; keep prod release paused.
+- Deploy exclusively from develop, including its real Netlify branch deploy. Main stays unchanged until the owner explicitly requests promotion after development.
 - Use Netlify team don-alex-perera and site pagechime; preserve privacy until app access is enforced.
 - Verify a real ready deploy, source revision, assets and access controls; report any necessary account connection action precisely.
 
@@ -70,3 +70,10 @@ REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and teste
 - Plan: docs/plans/REQ-009-ebook-reading.md. Continue single Netlify project ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, now named pagechime by the owner; dev remains integration and prod stays paused.
 
 REQ-009 evidence: PR #4;20 unit/contracts,36 browser cases (22 existing and14 new), both full-content native exports, Next/types,93 starter checks,556/900KiB budget and independent review. Full Manifest is lossless across four reading layouts; real opening/ending screenshots were inspected on desktop/mobile. See docs/PAGECHIME-VERIFICATION.md for native/hosting limits. Netlify deployment and positive hosted account/media checks remain REQ-004/006/007.
+
+## [ ] REQ-010 — Develop-only workflow and branch deploy
+- Create develop from the latest verified reader source and keep implementation on it.
+- CI and release-source safeguards use develop/main; promotion to main needs a later explicit owner instruction.
+- Verify a ready develop branch deploy on the existing private Netlify project, its source revision and hosted access behavior.
+- Preserve historical branches and close superseded release PR #2 without merging.
+- Plan: docs/plans/REQ-010-develop-delivery.md.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "branches": {
-    "integration": "dev",
-    "production": "prod",
+    "integration": "develop",
+    "production": "main",
     "work_prefixes": [
       "feature/",
       "fix/",
@@ -15,8 +15,9 @@
     "only_integration_may_target_production": true
   },
   "continuity": {
-    "draft_pr_for_non_trivial_work": true,
+    "draft_pr_for_non_trivial_work": false,
     "one_writer_per_task_branch": true,
-    "github_state_over_chat_memory": true
+    "github_state_over_chat_memory": true,
+    "direct_integration_work": true
   }
 }

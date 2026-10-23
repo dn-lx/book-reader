@@ -40,8 +40,8 @@ Do not configure an ecosystem that the project does not actually use.
 4. Run affected browser/mobile/runtime checks.
 5. For auth, database, payments, hosting, build tooling or other sensitive dependencies, apply Security Boundary Review where relevant.
 6. Review transitive dependency changes if risk is high.
-7. Merge into `dev` only after evidence is green.
-8. Release to `prod` through the normal release workflow.
+7. Merge into `develop` only after evidence is green.
+8. Release to `main` through the normal release workflow.
 
 ## Update grouping
 

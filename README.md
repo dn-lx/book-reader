@@ -61,4 +61,4 @@ npm run build:mobile
 node scripts/test-starter.mjs
 ```
 
-CI builds without private content and tests using the original fixture. See [verification evidence](docs/PAGECHIME-VERIFICATION.md), [project memory](docs/PROJECT-MEMORY.md), and [operations](docs/OPERATIONS-RECOVERY.md). Code flows through feature branches → `dev` → approved `prod` releases.
+CI builds without private content and tests using the original fixture. See [verification evidence](docs/PAGECHIME-VERIFICATION.md), [project memory](docs/PROJECT-MEMORY.md), and [operations](docs/OPERATIONS-RECOVERY.md). All current implementation stays on `develop`. Changes reach `main` only after the owner explicitly requests promotion when development is complete.

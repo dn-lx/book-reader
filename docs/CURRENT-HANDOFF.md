@@ -1,31 +1,31 @@
 # Current Handoff
 
-Updated 2026-10-23.
+Updated 2026-10-24.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":null,"repository":null,"base":"dev","branch":null,"pr":null,"status":"idle","last_verified_sha":null,"next_step":null,"updated_at":"2026-10-23T21:49:36.465378+00:00"}
+{"task_id":"REQ-010","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"1db560129f6769c1c52f9d8737c120817f12098c","next_step":"Complete develop CI and the existing Netlify branch deploy, then verify hosted account/media behavior and restore the private library inputs.","updated_at":"2026-10-24T00:00:00+02:00"}
 <!-- AGENT_TASK_STATE_END -->
 
-## Development delivery
+## Owner workflow
 
-REQ-009 / [PR #4](https://github.com/dn-lx/pagechime/pull/4) adds an interactive text reader to web and Expo on feature/ebook-reading. Source checkpoint d94640f and verification checkpoint e0d53d1 are pushed. The reader is complete; final candidate is prepared for exact-head CI/dev merge, with idle task state required before merge. Current dev a47df70 includes merged PR #3; its temporary branches were removed. Production PR #2 stays paused draft. Use dev as the only integration branch and the existing Netlify site; no production publish or duplicate project.
+The owner explicitly requested a develop branch deploy and all further implementation exclusively on develop. Do not merge or deploy main until the owner explicitly requests it after development. This overrides the previous integration/release branch convention. The opt-in direct integration policy permits task state on develop with no PR; no release PR is needed during this phase.
 
-Shared lossless pagination and anchors preserve reading independently of audio; both readers add appearance controls and quotation notes/highlights. Independent review approved server metadata validation and native context/escaping/navigation guards. Web saved-PDF and missing-follow-preference restore findings were fixed; ten new desktop/mobile reading regressions pass. Twenty unit/contracts, types, Next export and both full-content Hermes iOS/Android exports pass. All 986 Manifest passages across19 chapters retain every character at four layouts (2,273 pages checked). All fourteen new browser/native-markup checks,93 starter regressions and strict docs/adapters now pass. Actual Manifest opening/ending rendered on desktop/mobile with no page errors/overflow; screenshots inspected. Final exact-head CI remains pending. Native cross-paragraph quotation controls/UTF-8 were repaired and browser-tested, then both full-content Expo exports passed again. The22d38d3 Application run had35/36 browser passes: the existing logout helper observed the sign-in heading before asynchronous worker/server cleanup. It now waits for the existing enabled sign-in button before asserting401; both desktop/mobile targeted cases pass, with authorization assertions unchanged. No signed native build/device test is claimed. See docs/plans/REQ-009-ebook-reading.md; existing advisory remains REQ-005.
+Develop was created from verified source 1db560129f6769c1c52f9d8737c120817f12098c. That source includes merged interactive reader PR #4 and passed Application, Security checks, Agent reliability, Agent stack validation and Version validation on its exact revision. New branch-policy changes still need their own checks. Historical branches were preserved. Obsolete release PR #2 was closed without merging.
 
-## External identities and writes
+## Hosting
 
-- GitHub canonical dn-lx/pagechime, same repository ID1431335742; owner renamed it manually.
-- Netlify pagechime, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Same site renamed in place, team login retained on all deploys. No upload/deploy succeeded; Git CD is not linked. The connector cannot upload/link Git. Private ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed remains unused/unpublished.
-- Me+ wbqnctrvxohxwiaignhg: isolated book_reader_* migrations20261023183634_book_reader_accounts /20261023185057_book_reader_payload_retention applied; other app data/auth untouched. Dedicated book-reader-api v2 is ACTIVE after deploying the independently reviewed optional quotation/reading validation from d94640f. Custom opaque sessions enforce authentication (verify_jwt=false intentionally); legacy metadata remains accepted. No DB/grant change for v2. Prior rollback SQL ownership/revocation/CAS/grant checks passed; v2 public denied-path [contract run](https://github.com/dn-lx/pagechime/actions/runs/40028908946) passed. Positive hosted account verification/bootstrap is still pending. See docs/READER-ACCOUNTS.md.
+Existing Netlify project pagechime, ID 73688a4b-90ab-4eac-be6d-ef305f33ebc3, team don-alex-perera. Authenticated dashboard access and the existing GitHub app connection are working in this session. Its UI confirms no successful deployment and no linked repository before this work. Keep the existing private team gate. Configure only develop as the source of this dedicated development project and explicitly enable the develop branch deploy; a primary-domain deploy alone is not branch-deploy evidence. Record the actual ready deploy URL, context, commit and smoke results here once verified.
 
-## Deployment blocker
+Local shell networking cannot resolve api.github.com. GitHub connector reads/writes work; source is restored locally from immutable GitHub content. Do not repeat the previous cloud-network settings instructions: this is a different runtime, and browser access currently works.
 
-Managed spec57 enforces restricted networking with package-manager hosts only and no additional hosts. Safe Netlify/Supabase requests return proxy403. The owner confirmed **me-plus** is the only environment; this chat's tooltip also shows me-plus. Earlier guidance claiming a separate Pagechime environment was incorrect. Owner reports saving/publishing api.netlify.com, app.netlify.com, *.netlify.app and wbqnctrvxohxwiaignhg.supabase.co, but spec57 still reports no additional hosts and the same old source config version. Confirm the persisted list and apply the published change to the running environment; do not invent another environment or unverified restart controls. Do not repeat unverified cloud-icon/menu directions, bypass restrictions, or request tokens in chat. Netlify CLI OAuth authorization will follow once accessible. Keep REQ-004/006/007 hosted criteria unchecked until a real ready dev deploy and account/media boundary checks pass.
+## Remaining product delivery
 
-## Private content and compatibility
+REQ-001–003, REQ-008–009 implementation is merged. REQ-004/006/007 hosted criteria remain incomplete until a ready deployment and actual account/media checks pass. REQ-005 remains the tracked Expo tooling advisory. No signed APK/IPA, physical-device test or store release is claimed. Google narration stays setup-only.
 
-Ignored web/native assets and /workspace/output retain full Manifest:19 chapters,986 timed passages,237 PDF pages,13,682.328 seconds (~3h48m), British female Kokoro Emma, slightly slowed/subtle emotion. Google Neural2 remains setup-only. Never commit transcripts/PDF/audio to public Git.
+The current Windows workspace did not inherit the prior ignored private assets. Full source is public, but the original prepared 19 chapter audio files, 986 timed passages, PDF and cover are absent here. A clean Git build deliberately has an empty importable library; it must not be reported as the complete Manifest delivery. The earlier workspace was reported to contain those prepared inputs; restore them without adding book contents to public Git.
 
-Owner Drive downloads are complete and verified without sharing changes: [MP3](https://drive.google.com/file/d/12SV0QCUGaME3YHL32GxYOZ83ckYiZ4dX/view),95,778,068 bytes; [M4B](https://drive.google.com/file/d/1BeSTvCQmLnXw7WV2MmVmnZMTWcsebFRg/view),84,651,639 bytes, chapter markers retained. Originals remain unchanged.
+Owner Drive copies were read back: complete MP3 ID 12SV0QCUGaME3YHL32GxYOZ83ckYiZ4dX (95,778,068 bytes); recorded M4B ID 1BeSTvCQmLnXw7WV2MmVmnZMTWcsebFRg. Those single audio copies alone do not reconstruct the existing timed-book assets.
 
-Retain legacy leaf.* storage/cache namespaces, app.dnlx.leaf native IDs, book-reader-api and book_reader_* backend names. Renamed browser origins require fresh sign-in; browser-only imports/offline copies do not migrate. Source recovery3f653c5 is complete; retain the narrow historical public-identifier Gitleaks exception and all scanning rules.
+## Backend compatibility
+
+Me+ project wbqnctrvxohxwiaignhg, dedicated book-reader-api v2 and isolated book_reader_* identities remain unchanged by this branch/deploy task. Prior source/SQL/denied-path evidence is in docs/READER-ACCOUNTS.md. Positive hosted account/media checks and first administrator activation are still pending. Preserve legacy leaf.* storage keys and app.dnlx.leaf native IDs.

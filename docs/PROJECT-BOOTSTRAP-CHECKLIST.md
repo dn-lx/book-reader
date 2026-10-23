@@ -12,16 +12,16 @@ Use this immediately after creating a repository from Agent Project Starter.
 
 ## Branching
 
-- [ ] Ensure `prod` exists as production/release branch and is the default branch.
-- [ ] Create `dev`.
+- [ ] Ensure `main` exists as production/release branch and is the default branch.
+- [ ] Create `develop`.
 - [ ] Configure ordinary work as feature/fix/chore → dev.
-- [ ] Configure production flow as dev → prod only.
+- [ ] Configure production flow as develop → main only.
 - [ ] Create/require `production-approved` label if using the provided release guard.
-- [ ] Protect `dev` and `prod` from deletion/force-push and require PRs as appropriate.
-- [ ] After the checks have run at least once, require `policy / agent-stack`, `policy / version`, `security / gitleaks`, `security / semgrep`, and `security / dependency-audit` on `dev` (or the adapted project equivalents).
-- [ ] On `prod`, also require `policy / prod-source-and-approval` so only an approved same-repository `dev` PR can release.
+- [ ] Protect `develop` and `main` from deletion/force-push and require PRs as appropriate.
+- [ ] After the checks have run at least once, require `policy / agent-stack`, `policy / version`, `security / gitleaks`, `security / semgrep`, and `security / dependency-audit` on `develop` (or the adapted project equivalents).
+- [ ] On `main`, also require `policy / prod-source-and-approval` so only an approved same-repository `develop` PR can release.
 - [ ] Configure a real human production approval mechanism (for example required approving review/CODEOWNER/protected deployment as appropriate); the `production-approved` label check is supplemental and cannot by itself prove the approver was human.
-- [ ] Enable GitHub native **Automatically delete head branches** after `dev` is protected.
+- [ ] Enable GitHub native **Automatically delete head branches** after `develop` is protected.
 
 ## Build and tests
 
@@ -124,7 +124,7 @@ For non-frontend projects, mark this section Not applicable rather than inventin
 - [ ] Decide which changes require independent review.
 - [ ] Use `docs/templates/REVIEW-PACKET-TEMPLATE.md` for sensitive/high-impact review handoffs.
 - [ ] Use `docs/templates/VERIFICATION-EVIDENCE-TEMPLATE.md` when material work benefits from a compact reproducible check/browser/performance/analytics evidence packet.
-- [ ] Use `docs/templates/RELEASE-SUMMARY-TEMPLATE.md` for dev→prod releases.
+- [ ] Use `docs/templates/RELEASE-SUMMARY-TEMPLATE.md` for develop→main releases.
 
 ## Deployment/operations
 

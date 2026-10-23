@@ -62,3 +62,12 @@ test("rejects idle task state bound to a stale integration branch", () => {
   const errors = validateTaskState({ ...idle, base: "develop" }, "dev");
   assert.ok(errors.includes("base must match integration branch: dev"));
 });
+
+test("direct integration work requires explicit policy and a matching integration branch", () => {
+  const direct = { ...active, base: "develop", branch: "develop", pr: null };
+  assert.deepEqual(validateTaskState(direct, "develop", { allowIntegrationWork: true }), []);
+  assert.notDeepEqual(validateTaskState(direct, "develop"), []);
+  assert.notDeepEqual(validateTaskState(direct, null, { allowIntegrationWork: true }), []);
+  assert.notDeepEqual(validateTaskState({ ...direct, base: "main", branch: "main" }, "develop", { allowIntegrationWork: true }), []);
+  assert.notDeepEqual(validateTaskState({ ...direct, branch: "feature/other" }, "develop", { allowIntegrationWork: true }), []);
+});

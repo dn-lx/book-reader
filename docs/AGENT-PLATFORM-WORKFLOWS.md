@@ -20,15 +20,15 @@ If a platform adapter conflicts with `AGENTS.md`, follow `AGENTS.md`.
 1. Read AGENTS, Project Memory and Current Handoff.
 2. Reconcile task → branch → PR with `task-continuity` before creating/resuming implementation work.
 3. Inspect the verified active branch/working tree, relevant PRs/issues and recent commits.
-4. If no valid task branch exists, start ordinary work from current `dev` on a focused feature/fix/chore branch and create a draft PR early for non-trivial work.
+4. If no valid task branch exists, start ordinary work from current `develop` on a focused feature/fix/chore branch and create a draft PR early for non-trivial work.
 5. Read relevant skills before specialized/sensitive work.
 6. Verify required MCPs/connectors before relying on them.
 7. Trace the actual code/data path and intended requirement.
 8. Make the smallest complete change.
 9. Run documented checks for the current candidate SHA. Never weaken checks to get green.
 10. Use independent review for security/auth/payments/data/privacy/release-sensitive work.
-11. Record version impact per `docs/VERSIONING.md`; merge feature/fix/chore only into `dev` and verify cleanup per `docs/BRANCH-LIFECYCLE.md`.
-12. Release only through `dev → prod`; for deployed systems follow operations/recovery verification.
+11. Record version impact per `docs/VERSIONING.md`; merge feature/fix/chore only into `develop` and verify cleanup per `docs/BRANCH-LIFECYCLE.md`.
+12. Release only through `develop → main`; for deployed systems follow operations/recovery verification.
 13. Update Current Handoff when material unfinished state would otherwise be lost.
 
 ## ChatGPT / OpenAI Codex

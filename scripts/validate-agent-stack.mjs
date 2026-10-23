@@ -1,3 +1,4 @@
+import { readdir } from 'node:fs/promises'
 import { readFile, access } from 'node:fs/promises'
 
 const required = [
@@ -147,15 +148,14 @@ for (const phrase of [
   if (!agents.includes(phrase)) throw new Error(`AGENTS.md is missing required reference: ${phrase}`)
 }
 
-try {
-  await access('.github/pull_request_template.md')
+// Compare directory-entry spelling: Windows resolves the uppercase file through
+// the lowercase alias, which is not a second template.
+if ((await readdir('.github')).includes('pull_request_template.md')) {
   throw new Error('Duplicate PR template found: keep only .github/PULL_REQUEST_TEMPLATE.md')
-} catch (error) {
-  if (error.code !== 'ENOENT') throw error
 }
 
 const { checkTaskState } = await import('./task-state.mjs')
-const taskState = await checkTaskState(undefined, integration)
+const taskState = await checkTaskState(undefined, integration, { allowIntegrationWork: policy.continuity?.direct_integration_work === true })
 if (!taskState.ok) process.exit(1)
 
 for (const file of ['CLAUDE.md', 'GEMINI.md']) {

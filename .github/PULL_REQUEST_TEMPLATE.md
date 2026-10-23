@@ -9,7 +9,7 @@
 
 ## Task continuity
 
-- Base branch: `dev`
+- Base branch: `develop`
 - Working branch:
 - Status:
 - Last verified SHA (must match current head for final evidence):
@@ -51,5 +51,5 @@ TODO
 - Changelog entry or reason none is needed:
 - Compatibility/migration impact:
 - [ ] Development-only change
-- [ ] Requires later `dev → prod` release review
+- [ ] Requires later `develop → main` release review
 - [ ] After merge, verify temporary branch cleanup.

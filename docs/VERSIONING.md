@@ -25,13 +25,13 @@ SemVer reference: https://semver.org/
 
 ## Release preparation and publication
 
-1. Prepare a feature/chore PR into dev: choose a version greater than prod's VERSION (first adoption may keep 0.1.0), move applicable Unreleased entries to `## [X.Y.Z] - YYYY-MM-DD`, retain the Unreleased heading, and document tests/rollback.
-2. Open dev → prod. Version validation requires an increased version and matching dated notes. Follow the production approval and release-readiness rules. A version bump does not authorize production.
-3. After the approved merge, create an immutable annotated `vX.Y.Z` tag on the exact verified prod merge commit and a GitHub Release containing that version's changelog notes. Use a verified GitHub tool or `git tag -a vX.Y.Z <prod-merge-sha>` then `git push origin vX.Y.Z`; never tag dev as stable, move a published tag or reuse a version.
-4. Verify the remote tag/release target. Record version, SHA, release URL and checks in Current Handoff. Sync released prod ancestry back to dev through the normal reviewed workflow when needed.
+1. Prepare a feature/chore PR into develop: choose a version greater than main's VERSION (first adoption may keep 0.1.0), move applicable Unreleased entries to `## [X.Y.Z] - YYYY-MM-DD`, retain the Unreleased heading, and document tests/rollback.
+2. Open develop → main. Version validation requires an increased version and matching dated notes. Follow the production approval and release-readiness rules. A version bump does not authorize production.
+3. After the approved merge, create an immutable annotated `vX.Y.Z` tag on the exact verified main merge commit and a GitHub Release containing that version's changelog notes. Use a verified GitHub tool or `git tag -a vX.Y.Z <prod-merge-sha>` then `git push origin vX.Y.Z`; never tag develop as stable, move a published tag or reuse a version.
+4. Verify the remote tag/release target. Record version, SHA, release URL and checks in Current Handoff. Sync released main ancestry back to develop through the normal reviewed workflow when needed.
 
 Publication is deliberately human-approved; CI validates versions but does not create releases or deploy. Development artifacts can use `X.Y.Z-dev.<run>+<shortsha>` as build metadata without changing VERSION. Do not present a development build as released.
 
 ## CI enforcement
 
-`Version validation / version` validates stable syntax, changelog presence, non-decreasing PR versions, and release increase/dated notes on PRs into prod. Configure it as a required check. Branch rules must also enforce the existing production guard; a workflow alone cannot prevent a bypassing merge or direct push.
+`Version validation / version` validates stable syntax, changelog presence, non-decreasing PR versions, and release increase/dated notes on PRs into main. Configure it as a required check. Branch rules must also enforce the existing production guard; a workflow alone cannot prevent a bypassing merge or direct push.

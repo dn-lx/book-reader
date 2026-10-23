@@ -43,7 +43,7 @@ Do not invoke every host for every task. One lead agent is the default. Parallel
 - Never let two agents edit the same dirty working tree.
 - The router integrates changes and owns conflict resolution.
 - Reviewers receive the requirement, final diff, relevant source and deterministic evidence rather than the implementer's full transcript.
-- Production still follows the repository's explicit `dev -> prod` approval path.
+- Production still follows the repository's explicit `develop -> main` approval path.
 
 ## Claude Code efficiency profile
 

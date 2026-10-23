@@ -15,10 +15,10 @@ An installable personal library for reading book pages while listening to synchr
 - Use `docs/REQUIREMENTS.md` for accepted requirements.
 
 ## Branch flow
-- Integration: `dev`
-- Production: `prod`
-- Ordinary work: temporary feature/fix/chore branch → `dev`
-- Release: `dev` → `prod` only after required checks and explicit approval.
+- Integration: `develop`
+- Production: `main`
+- Ordinary work: temporary feature/fix/chore branch → `develop`
+- Release: `develop` → `main` only after required checks and explicit approval.
 
 ## Project rule
 Do not invent missing architecture, credentials, external-system identity or production state. Verify against current source/runtime/tool evidence.

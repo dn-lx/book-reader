@@ -48,7 +48,7 @@ Keep exactly one block in `docs/CURRENT-HANDOFF.md`:
 {
   "task_id": "REQ-123",
   "repository": "owner/repository",
-  "base": "dev",
+  "base": "develop",
   "branch": "feature/example",
   "pr": 42,
   "status": "implementing",
@@ -75,7 +75,7 @@ When a new session receives "continue", "resume", "fix it", or another request t
 
 1. read `AGENTS.md`, Project Memory and Current Handoff,
 2. inspect the machine-readable task state,
-3. inspect the referenced GitHub PR/branch and current `dev`,
+3. inspect the referenced GitHub PR/branch and current `develop`,
 4. prefer GitHub/source/check evidence over stale handoff or chat memory,
 5. continue only if task, branch and PR still correspond to the requested outcome,
 6. otherwise mark the old state stale/superseded and bind the task explicitly.
@@ -112,13 +112,17 @@ When implementation is otherwise ready for final verification:
 
 This ordering avoids a handoff-only commit invalidating an already-finished verification run. If a later repair/change is required, restore an active task state before continuing and treat the previous green checks as stale.
 
-The PR body/history remains the durable per-task record; `dev` must not inherit a stale active-task marker.
+The PR body/history remains the durable per-task record; `develop` must not inherit a stale active-task marker.
 
-After a PR merges into `dev`:
+After a PR merges into `develop`:
 - verify the merged SHA/check state,
 - let GitHub's native "Automatically delete head branches" remove the temporary branch,
-- keep `dev` and `prod` protected and permanent,
+- keep `develop` and `main` protected and permanent,
 - do not reuse completed temporary branch names,
 - retire stale/unmerged branches only after reviewing whether they contain unique work.
 
-Production promotion is only `dev → prod` with explicit production approval.
+Production promotion is only `develop → main` with explicit production approval.
+
+## Current Pagechime development phase
+
+The owner explicitly requires implementation directly on `develop`, with no promotion to `main` until a later instruction. When `.agents/project-policy.json` sets `continuity.direct_integration_work` to true, keep task state on the integration branch with a null PR; do not create a feature branch or release PR just to satisfy the generic examples below. This exception does not authorize changes to the production branch.

@@ -2,8 +2,8 @@
 
 ## Release scope
 
-- Head: `dev`
-- Base: `prod`
+- Head: `develop`
+- Base: `main`
 - Release PR:
 - Candidate SHA/build:
 - Production runtime target:

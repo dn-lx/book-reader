@@ -31,3 +31,8 @@ test("legacy branch wording is detected against configured policy", () => {
     ["dev", "prod"],
   );
 });
+
+test("npm development scripts are not stale Git branch references", () => {
+  assert.deepEqual(findLegacyBranchTerms("`npm run dev` and `npm run dev:mobile`", "develop", "main"), []);
+  assert.deepEqual(findLegacyBranchTerms("`git switch dev`", "develop", "main"), ["dev"]);
+});

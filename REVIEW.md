@@ -33,8 +33,8 @@ Avoid speculative findings that cannot be tied to the changed code or a real pro
 
 ## Repository invariants
 
-- Ordinary work targets `dev` from a focused feature/fix/chore branch.
-- Only `dev` may be promoted to `prod`, with explicit production approval.
+- Ordinary work targets `develop` from a focused feature/fix/chore branch.
+- Only `develop` may be promoted to `main`, with explicit production approval.
 - Do not weaken tests, validation, authorization, secret handling, accessibility or performance budgets to make CI pass.
 - Material frontend changes require rendered-runtime evidence; source inspection alone is insufficient.
 - Analytics changes must preserve privacy boundaries and remain non-authoritative for transactional behavior.

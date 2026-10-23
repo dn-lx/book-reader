@@ -1,7 +1,7 @@
 name: Reader backend contract
 on:
   pull_request:
-    branches: [dev]
+    branches: [develop]
     paths:
       [
         server/**,
