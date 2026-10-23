@@ -7,7 +7,7 @@ import {
   globalPosition,
   locatePosition,
   segmentAt,
-} from "@leaf/core";
+} from "@pagechime/core";
 import type { ReaderStorage } from "./storage";
 export function usePlayback(notify: (s: string) => void,storage:ReaderStorage) {
   const {readSaved,writeSaved}=storage;

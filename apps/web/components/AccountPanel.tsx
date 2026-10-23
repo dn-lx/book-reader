@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { readerClient } from "@leaf/core";
+import { readerClient } from "@pagechime/core";
 import { useAccount } from "../lib/account";
 const api = readerClient("/api/reader");
 type AccountRow = {

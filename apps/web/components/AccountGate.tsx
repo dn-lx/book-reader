@@ -7,10 +7,11 @@ import {
   ReaderApiError,
   type ReaderSession,
   type CloudItem,
-} from "@leaf/core";
+} from "@pagechime/core";
 import { createReaderStorage, type ReaderStorage } from "../lib/storage";
 import { AccountContext } from "../lib/account";
 const api = readerClient("/api/reader");
+// Keep the original storage keys so a branding update preserves sessions and pending logout.
 const remembered = "leaf.reader.session";
 async function workerScope(
   account: string | null,
@@ -320,7 +321,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
       </div>
       <section className="account-panel">
         <div className="account-wordmark">
-          <Leaf weight="duotone" /> leaf.
+          <Leaf weight="duotone" /> Pagechime.
         </div>
         <p className="eyebrow">YOUR READING SPACE</p>
         <h1>

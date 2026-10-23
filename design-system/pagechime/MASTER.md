@@ -1,4 +1,4 @@
-# Leaf visual system
+# Pagechime visual system
 
 The accepted product is a personal reading app, not a marketing landing page. This product brief overrides the upstream design generator's marketing-section suggestions.
 

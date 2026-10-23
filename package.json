@@ -1,5 +1,5 @@
 {
-  "name": "leaf-read-listen",
+  "name": "pagechime",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @leaf/web",
-    "dev:mobile": "npm run start -w @leaf/mobile",
-    "build": "npm run build -w @leaf/web",
-    "build:mobile": "npm run export -w @leaf/mobile",
+    "dev": "npm run dev -w @pagechime/web",
+    "dev:mobile": "npm run start -w @pagechime/mobile",
+    "build": "npm run build -w @pagechime/web",
+    "build:mobile": "npm run export -w @pagechime/mobile",
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "prepare:manifest": "python scripts/prepare_manifest.py",
     "test": "tsx --test tests/*.test.ts",

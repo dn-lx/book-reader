@@ -1,4 +1,5 @@
-import type { Book } from "@leaf/core";
+import type { Book } from "@pagechime/core";
+// Legacy names are a persistence contract; retain account data across brand updates.
 export type StoredBook = {
   book: Book;
   pdf: Blob;

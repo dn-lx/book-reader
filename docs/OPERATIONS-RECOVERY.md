@@ -94,10 +94,10 @@ Urgency does not bypass authorization, production branch policy or data-safety b
 
 For production projects, adapt `docs/templates/OPERATIONS-RUNBOOK-TEMPLATE.md` or maintain equivalent project documentation. Keep secrets out of it.
 
-## Leaf runtime identity and recovery
+## Pagechime runtime identity and recovery
 
-- Development host: Netlify book-reader-dnlx-dev, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Project exists with team login; no successful upload yet. Follow [reader account/deployment setup](READER-ACCOUNTS.md).
-- Website source: dn-lx/book-reader, feature→dev→approved prod. User currently authorized development deployment; production PR#2 stays paused. Keep the actual source SHA and ready deploy URL in Current Handoff after uploading. A branch name or successful build does not prove a branch deploy exists.
+- Development host: Netlify pagechime-dev, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Project exists with team login; no successful upload yet. Follow [reader account/deployment setup](READER-ACCOUNTS.md).
+- Website source: dn-lx/pagechime, feature→dev→approved prod. User currently authorized development deployment; production PR#2 stays paused. Keep the actual source SHA and ready deploy URL in Current Handoff after uploading. A branch name or successful build does not prove a branch deploy exists.
 - Website artifact: Next.js static export apps/web/out, Netlify BFF and protected-media edge function. Complete private Manifest inputs remain ignored, outside public Git. A clean Git build has no private catalog.
 - Database/API: existing Me+ project wbqnctrvxohxwiaignhg, isolated book_reader_* tables and book-reader-api v1. Custom accounts do not require Supabase Auth. Both schema migrations are additive and applied; avoid dropping them on application rollback because they hold reader notes/progress. Keep service-role credentials server-side.
 - The unused ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed is not a deployed runtime. Do not publish it or use its URL as the Netlify result.

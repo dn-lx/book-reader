@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Asset } from "expo-asset";
 import * as FS from "expo-file-system/legacy";
-import { palette } from "@leaf/core";
+import { palette } from "@pagechime/core";
 export default function NativePdf({
   source,
   page,
@@ -55,7 +55,9 @@ export default function NativePdf({
   }, [source]);
   useEffect(() => {
     if (ready.current)
-      ref.current?.injectJavaScript(`window.leafPDF?.setPage(${page});true;`);
+      ref.current?.injectJavaScript(
+        `window.pagechimePDF?.setPage(${page});true;`,
+      );
   }, [page]);
   function message(e: WebViewMessageEvent) {
     try {
@@ -63,7 +65,7 @@ export default function NativePdf({
       if (m.type === "ready") {
         ready.current = true;
         ref.current?.injectJavaScript(
-          `window.leafPDF.load(${JSON.stringify(data.current)},${currentPage.current});true;`,
+          `window.pagechimePDF.load(${JSON.stringify(data.current)},${currentPage.current});true;`,
         );
       }
       if (m.type === "loaded") onCount?.(m.count);
@@ -84,11 +86,11 @@ export default function NativePdf({
         <WebView<{}>
           key={String(source)}
           ref={ref}
-          source={{ html, baseUrl: "https://leaf.local/" }}
+          source={{ html, baseUrl: "https://pagechime.local/" }}
           originWhitelist={["*"]}
           onShouldStartLoadWithRequest={(r) =>
             r.url === "about:blank" ||
-            r.url === "https://leaf.local/" ||
+            r.url === "https://pagechime.local/" ||
             r.url.startsWith("blob:")
           }
           onMessage={message}

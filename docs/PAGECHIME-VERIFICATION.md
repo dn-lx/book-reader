@@ -1,4 +1,4 @@
-# Leaf verification evidence
+# Pagechime verification evidence
 
 Candidate: initial 0.1.0 implementation on feature/leaf-read-along, PR #1. Final SHA and deployment identity are recorded in Current Handoff and GitHub checks.
 

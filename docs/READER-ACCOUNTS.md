@@ -28,7 +28,7 @@ There is no public signup or automatic email. Password reset/self-service passwo
 
 ## Deploy the development version
 
-The authorized project is `book-reader-dnlx-dev`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`, team `don-alex-perera`. Production PR #2 stays paused. No Netlify upload has succeeded yet.
+The authorized project is `pagechime-dev`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`, team `don-alex-perera`. Production PR #2 stays paused. No Netlify upload has succeeded yet.
 
 `netlify.toml` publishes `apps/web/out`, bundles the BFF, and routes the media edge guard over `/books/*` and `/library.json`. Private media responses are no-store. The original Manifest files are ignored inputs already present in the execution workspace. A clean Git continuous deployment build does not include them; do not call an empty-library Git deploy the complete Manifest deployment.
 
@@ -39,8 +39,8 @@ For a local prebuilt development preview, after checking out the verified `dev` 
 ```sh
 npm ci
 npm run build
-npx netlify-cli@27.14.2 link --filter @leaf/web --id 73688a4b-90ab-4eac-be6d-ef305f33ebc3
-npx netlify-cli@27.14.2 deploy --filter @leaf/web --dir apps/web/out --no-build --context branch-deploy
+npx netlify-cli@27.14.2 link --filter @pagechime/web --id 73688a4b-90ab-4eac-be6d-ef305f33ebc3
+npx netlify-cli@27.14.2 deploy --filter @pagechime/web --dir apps/web/out --no-build --context branch-deploy
 ```
 
 Confirm the CLI's resolved publish/functions/edge directories before upload. `--context branch-deploy` selects environment context; it does not create a Git branch deploy. A real `dev` branch subdomain requires linking Git and enabling that branch in Netlify. An alias does not establish that configuration. Keep these delivery states distinct in reporting.
@@ -53,6 +53,10 @@ Keep the outer Netlify team-login gate until the app/media checks below pass. Th
 - 22 desktop/mobile browser cases cover reading/PDF/audio/imports and account login, notes CRUD/fresh-browser sync, user switching, offline reload/reconnect, worker termination, two-tab logout, expiry, storage failure and revocation retry. Screenshots inspected; axe passes the sign-in and existing reader/library states.
 - All TypeScript checks, Next export, Expo Android/iOS Hermes exports, performance budget and 93 starter checks pass locally. Native device/signing/store verification remains pending.
 - Both reader migrations applied to Me+. Rolled-back live SQL checks verify invite reuse denial, CAS, session generation invalidation, anon SELECT denial, authenticated RPC denial and 10,000-character Unicode notes. No fixture accounts remain. Security advisor INFO for RLS without policies is intentional deny-by-default; unused-index INFO is expected for new tables. No unrelated Me+ advisor changes were made.
-- [Hosted backend contract run](https://github.com/dn-lx/book-reader/actions/runs/40007820279) passed actual `/me` 401, `/state` 401, malformed login 400, and unknown-user login 401, exercising the live function/database without credentials or private reads.
+- [Hosted backend contract run](https://github.com/dn-lx/pagechime/actions/runs/40007820279) passed actual `/me` 401, `/state` 401, malformed login 400, and unknown-user login 401, exercising the live function/database without credentials or private reads.
 
 Still required: successful real-account HTTP login/state flows, actual Netlify edge routing and file access (including anonymous GET/HEAD/Range and encoded-path cases inside the outer team gate), the final deploy URL/revision, and native device checks. Never treat the outer Netlify login page as proof that the reader guard works. See `docs/SECURITY-REVIEW.md` for the separate Expo tooling advisory.
+
+## Pagechime compatibility
+
+The same Netlify project is now pagechime-dev. Retain the legacy leaf.* device-storage/cache namespaces, native app.dnlx.leaf identifiers, custom account tables and deployed book-reader-api endpoint. These stable internal identities preserve account data and installed-app upgrade paths. Host-only cookies and device-only browser imports/caches are bound to the original hostname and do not migrate to a renamed Netlify origin; sign in again to restore server-synced notes/bookmarks. No successful old-origin deploy has been verified.

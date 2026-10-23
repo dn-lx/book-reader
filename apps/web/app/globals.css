@@ -145,17 +145,19 @@ a {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 6px;
   width: max-content;
 }
 .brand svg {
   color: var(--olive);
+  width: 25px;
+  flex-shrink: 0;
 }
 .brand > span {
   font-family: var(--serif);
-  font-size: 43px;
-  letter-spacing: -2px;
+  font-size: 32px;
+  letter-spacing: -1.1px;
   line-height: 1;
 }
 .brand-dot {
@@ -1741,10 +1743,10 @@ progress::-webkit-progress-value {
     padding-right: 10px;
   }
   .brand > span {
-    font-size: 37px;
+    font-size: 27px;
   }
   .brand svg {
-    width: 25px;
+    width: 22px;
   }
   .nav-item {
     font-size: 11px;

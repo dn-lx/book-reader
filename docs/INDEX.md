@@ -80,11 +80,11 @@ Agent-skill discovery is separate: use `.agents/SKILL-INDEX.md`.
 
 Run `node scripts/validate-docs.mjs` to check documentation structure/references. After adapting the starter into a real project, run `node scripts/validate-docs.mjs --strict-project` to find starter placeholders that should have been replaced.
 
-## Leaf application
+## Pagechime application
 
 - `docs/CONTENT-AND-VOICES.md` — private content, timing format and optional Google setup.
 - `docs/NATIVE-DELIVERY.md` — Expo exports, native signing and device verification.
-- `docs/LEAF-VERIFICATION.md` — application verification evidence and limits.
+- `docs/PAGECHIME-VERIFICATION.md` — application verification evidence and limits.
 - `docs/SECURITY-REVIEW.md` — reviewed runtime boundaries and the tracked Expo tooling advisory.
 
 - `docs/READER-ACCOUNTS.md` — standalone Me+ accounts, first admin, Netlify setup and verification.

@@ -49,11 +49,11 @@ import {
   listeningLength,
   segmentAt,
   validateTimedBook,
-} from "@leaf/core";
+} from "@pagechime/core";
 import { catalog } from "./assets/catalog.generated";
 import NativePdf from "./NativePdf";
 import ReaderAccountGate, { useReaderAccount } from "./ReaderAccount";
-import type { ReaderNote } from "@leaf/core";
+import type { ReaderNote } from "@pagechime/core";
 type Entry = {
   book: Book;
   audio: (number | string)[];
@@ -119,12 +119,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ReaderAccountGate>
-        <LeafApp />
+        <PagechimeApp />
       </ReaderAccountGate>
     </SafeAreaProvider>
   );
 }
-function LeafApp() {
+function PagechimeApp() {
   const { session, read, store, api, logout, syncMessage, keepLocalChanges } =
     useReaderAccount();
   const [notes, setNotes] = useState<ReaderNote[]>([]),
@@ -483,9 +483,16 @@ function LeafApp() {
           }}
           style={s.brand}
         >
-          <Feather name="feather" size={25} color={colors.accent} />
-          <Text style={s.logo}>
-            leaf<Text style={{ color: colors.accent }}>.</Text>
+          {width >= 500 && (
+            <Feather name="feather" size={25} color={colors.accent} />
+          )}
+          <Text
+            style={s.logo}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            Pagechime<Text style={{ color: colors.accent }}>.</Text>
           </Text>
         </Pressable>
         <View style={s.row}>
@@ -1127,8 +1134,8 @@ function LeafApp() {
             {sheet === "sleep" && (
               <View>
                 <Text style={s.description}>
-                  Pause after a little listening. Keep Leaf open for the timer
-                  to pause on time.
+                  Pause after a little listening. Keep Pagechime open for the
+                  timer to pause on time.
                 </Text>
                 {[0, 5, 15, 30, 60].map((m) => (
                   <Pressable
@@ -1603,18 +1610,25 @@ function makeStyles(c: typeof paper) {
       root: { flex: 1, backgroundColor: c.bg },
       header: {
         height: 64,
-        paddingHorizontal: 23,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderColor: c.line,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
       },
-      brand: { flexDirection: "row", alignItems: "center", gap: 9 },
+      brand: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 9,
+        flexShrink: 1,
+        marginRight: 8,
+      },
       logo: {
         fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-        fontSize: 39,
-        letterSpacing: -2,
+        fontSize: 26,
+        letterSpacing: -1,
+        flexShrink: 1,
         color: c.ink,
       },
       row: { flexDirection: "row", alignItems: "center" },

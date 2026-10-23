@@ -1,3 +1,4 @@
+// Retain the original cache namespaces for existing account-scoped offline downloads.
 const SHELL = "leaf-shell-__VERSION__";
 const SCOPES = "leaf-reader-scopes-v1";
 const scopeUrl = (id) =>

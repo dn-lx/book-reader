@@ -1,4 +1,4 @@
-# Leaf implementation plan
+# Pagechime implementation plan
 
 ## Outcome
 A calm read-and-listen library, starting with the user's complete Manifest PDF and narration. Next.js web and Expo native share book data/timing logic, with platform-specific accessible controls.

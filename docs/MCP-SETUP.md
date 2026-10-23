@@ -9,15 +9,15 @@ External tool access is host-specific. This repository records capability requir
 | Source control / PRs / CI | Required | GitHub | GitHub | Branches, diffs, pull requests, CI and workflow evidence |
 | Public web research / crawl | Optional | Firecrawl | Firecrawl | Read public documentation and references |
 | Current library/API docs | Required | Context7 / official docs | Official documentation via Firecrawl | Verify PDF.js and browser APIs |
-| Database/auth/storage | Not used | Supabase / Firebase / vendor tool | — | Not used |
-| Hosting/deployments | Required | Netlify / Vercel / Cloudflare | ChatGPT Sites | Owner-private deployment with local static archive |
+| Database/auth/storage | Required | Supabase | Me+ Supabase, isolated custom reader tables | Standalone accounts and private notes/progress |
+| Hosting/deployments | Required | Netlify | Netlify pagechime-dev | One existing development site; CLI deploy connection pending |
 | Browser/computer verification | Required | Playwright / browser tooling | Playwright and Chromium | Desktop/mobile end-to-end, accessibility and screenshot checks |
 | Code relationships | Optional | Graphify / code graph | Graphify | Define during integration |
 | Runtime observability | Not used | Sentry / vendor equivalent | — | Not used |
 | Product analytics/flags | Not used | PostHog / vendor equivalent | — | Not used |
 | Payments | Not used | Stripe / equivalent | — | Not used |
 | Transactional email | Not used | Resend / equivalent | — | Not used |
-| Documents/business files | Not used | Google Drive / SharePoint / Dropbox | — | Not used |
+| Documents/business files | Required | Google Drive | Google Drive | Owner-private full MP3/M4B downloads |
 | Issue/project management | Optional | GitHub / Linear / Jira | GitHub | Define during integration |
 
 ## Verification before use

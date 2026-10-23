@@ -27,7 +27,7 @@ import {
   ReaderSync,
   type ReaderSession,
   type CloudItem,
-} from "@leaf/core";
+} from "@pagechime/core";
 const BASE =
   "https://wbqnctrvxohxwiaignhg.supabase.co/functions/v1/book-reader-api";
 const SESSION = "reader.session.v1";
@@ -81,6 +81,7 @@ export default function ReaderAccountGate({
     const attempt = ++generation.current;
     engine.current?.close();
     const api = readerClient(BASE, () => s.token, s.account.id),
+      // Retain the original account namespace for installed-app continuity.
       prefix = `leaf.account.${s.account.id}.`;
     const read = async <T,>(key: string, fallback: T): Promise<T> => {
       try {
@@ -313,6 +314,7 @@ export default function ReaderAccountGate({
         <View style={styles.emblem}>
           <Text style={styles.leaf}>❧</Text>
         </View>
+        <Text style={styles.wordmark}>Pagechime.</Text>
         <Text style={styles.eyebrow}>YOUR READING SPACE</Text>
         <Text style={styles.title}>
           {loading
@@ -449,7 +451,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e9d9",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 40,
+    marginBottom: 20,
+  },
+  wordmark: {
+    fontFamily: "serif",
+    fontSize: 30,
+    color: "#292e24",
+    marginBottom: 30,
   },
   leaf: { fontSize: 48, color: "#65704f" },
   eyebrow: {

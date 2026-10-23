@@ -59,10 +59,10 @@ import {
   segmentAt,
   validateBook,
   validateTimedBook,
-} from "@leaf/core";
+} from "@pagechime/core";
 import { materialize, type StoredBook } from "../lib/storage";
 import { useAccount } from "../lib/account";
-import { type ReaderNote } from "@leaf/core";
+import { type ReaderNote } from "@pagechime/core";
 import AccountPanel from "./AccountPanel";
 import { usePlayback, type Playback } from "../lib/playback";
 import { pdfLibrary } from "../lib/pdf";
@@ -441,11 +441,11 @@ export default function ReaderApp() {
           setReading(false);
           setDrawer(false);
         }}
-        aria-label="Leaf library"
+        aria-label="Pagechime library"
       >
         <Leaf size={30} weight="duotone" />
         <span>
-          leaf<span className="brand-dot">.</span>
+          Pagechime<span className="brand-dot">.</span>
         </span>
       </button>
       <IconButton
@@ -623,7 +623,7 @@ export default function ReaderApp() {
           }}
         >
           <DeviceMobile size={16} />
-          {installed ? "Leaf is installed" : "Take Leaf with you"}
+          {installed ? "Pagechime is installed" : "Take Pagechime with you"}
           <ArrowRight size={14} />
         </button>
       </div>
@@ -1158,7 +1158,8 @@ export default function ReaderApp() {
             <div className="help-copy">
               <p>
                 Read the clean text or switch to the original PDF. With Follow
-                audio on, Leaf keeps your passage and page with the narrator.
+                audio on, Pagechime keeps your passage and page with the
+                narrator.
               </p>
               <p>
                 Click a passage to listen from there. Add bookmarks for thoughts

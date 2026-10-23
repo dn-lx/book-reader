@@ -1,9 +1,9 @@
 ---
-name: leaf-read-listen
-description: Project-specific durable guidance for Leaf · Read & Listen.
+name: pagechime
+description: Project-specific durable guidance for Pagechime · Read & Listen.
 ---
 
-# Leaf · Read & Listen
+# Pagechime · Read & Listen
 
 ## Purpose
 An installable personal library for reading book pages while listening to synchronized narration.

@@ -1,4 +1,4 @@
-# Leaf requirements
+# Pagechime requirements
 
 Accepted scope: Next.js website and Expo React Native app, based on Agent Project Starter. Updated 2026-10-23.
 
@@ -25,7 +25,7 @@ Accepted scope: Next.js website and Expo React Native app, based on Agent Projec
 - Android/iOS bundles are verified. Native signing/store publication requires the owner's build-service credentials and is not represented as verified without a build.
 - Starter's branch, continuity, project memory and CI conventions are adapted and checked.
 
-Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actual Manifest first/last chapter audio/PDF checks; independent review. See docs/LEAF-VERIFICATION.md. Native sleep timer is foreground-only and device testing remains separate.
+Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actual Manifest first/last chapter audio/PDF checks; independent review. See docs/PAGECHIME-VERIFICATION.md. Native sleep timer is foreground-only and device testing remains separate.
 
 ## [ ] REQ-005 — Recheck Expo CLI advisory before native signing/OTA delivery
 - Track GHSA-86w9-cpqp-85rv in node-forge 1.4.0 via Expo CLI; upstream has no patched release as of 2026-10-23.
@@ -36,7 +36,7 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 
 ## [ ] REQ-006 — Netlify development delivery
 - Deploy from the existing dev integration branch; keep prod release paused.
-- Use Netlify team don-alex-perera and site book-reader-dnlx-dev; preserve privacy until app access is enforced.
+- Use Netlify team don-alex-perera and site pagechime-dev; preserve privacy until app access is enforced.
 - Verify a real ready deploy, source revision, assets and access controls; report any necessary account connection action precisely.
 
 ## [ ] REQ-007 — Me+ standalone reader accounts and personal notes
@@ -48,3 +48,12 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 - Plan: docs/plans/REQ-007-reader-accounts.md.
 
 REQ-006/007 implementation is in PR #3. Custom Me+ schema/API are live and tested; web/native source, private notes, scoped offline data, revocation and fixture flows pass. Actual Netlify deployment/media routing and positive hosted account verification remain pending CLI/network setup. See docs/READER-ACCOUNTS.md for evidence and precise remaining steps. Do not mark these items complete from source checks alone.
+
+
+## [x] REQ-008 — Pagechime identity and one development environment
+- Use Pagechime in website/mobile wordmarks, titles, install metadata, workspace packages and maintained project documentation.
+- Rename the existing Netlify project in place to pagechime-dev; retain dev as the single integration branch and keep production paused.
+- Rename the existing GitHub repository to dn-lx/pagechime without creating another repository; verify its canonical name before changing source-control bindings.
+- Preserve existing accounts, notes/bookmarks, pending logout and account-scoped offline data. Keep deployed API/database and native application identities stable.
+- Acceptance: web/native checks and exports, desktop/mobile visual verification, independent review and readback of external identities/privacy settings.
+- Plan: docs/plans/REQ-008-pagechime.md. Netlify and GitHub canonical names/unchanged IDs and privacy/PR continuity are verified. Types,14 unit tests,93 starter checks,22 browser checks, both full-content native exports and web budget pass; desktop/mobile branding was inspected, including320–1440px wordmark geometry. Independent review found no blocker. No duplicate development site was created.

@@ -18,7 +18,7 @@ const generated = join(root, "apps/mobile/assets/catalog.generated.ts");
 if (!existsSync(generated))
   writeFileSync(
     generated,
-    'import type {Book} from "@leaf/core";\nexport const catalog:{book:Book;audio:number[];pdf:number;cover:number}[]=[];\n',
+    'import type {Book} from "@pagechime/core";\nexport const catalog:{book:Book;audio:number[];pdf:number;cover:number}[]=[];\n',
   );
 
 await import("./build-pdf-viewer.mjs");

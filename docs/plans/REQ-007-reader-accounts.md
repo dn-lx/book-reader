@@ -23,6 +23,6 @@ Accepted 2026-10-23: deploy the development branch to Netlify; use standalone us
 
 ## External state
 
-Netlify team don-alex-perera; development site 73688a4b-90ab-4eac-be6d-ef305f33ebc3 named book-reader-dnlx-dev, owner-private by default. No deploy uploaded yet. Netlify connector can manage projects but offers no upload/Git-link operation; CLI login or an authenticated browser action may be needed after the candidate is ready.
+Netlify team don-alex-perera; development site 73688a4b-90ab-4eac-be6d-ef305f33ebc3 named pagechime-dev, owner-private by default. No deploy uploaded yet. Netlify connector can manage projects but offers no upload/Git-link operation; CLI login or an authenticated browser action may be needed after the candidate is ready.
 
 ChatGPT Site appgprj_6adb96d58e38819192c282543ada4aed is unused/unpublished; user selected Netlify instead. The complete MP3/M4B were successfully uploaded to the owner's Google Drive after making full-length copies below the connector's 100 MiB transfer limit; originals remain in the execution output.

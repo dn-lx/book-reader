@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext } from "react";
-import type { ReaderAccount } from "@leaf/core";
+import type { ReaderAccount } from "@pagechime/core";
 import type { ReaderStorage } from "./storage";
 export const AccountContext = createContext<{
   account: ReaderAccount;
