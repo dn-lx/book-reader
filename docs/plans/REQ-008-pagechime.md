@@ -2,7 +2,7 @@
 
 ## Requirement and current evidence
 
-REQ-008: the user selected Pagechime and requested the name everywhere with one development environment. Continue existing draft PR #3 on feature/netlify-development targeting dev. Existing Netlify site73688a4b-90ab-4eac-be6d-ef305f33ebc3 was renamed in place to pagechime-dev; same team and privacy verified. Repository is now dn-lx/pagechime, verified with the same ID1431335742. Production remains paused; domains and new infrastructure are outside this change.
+REQ-008: the user selected Pagechime and requested the name everywhere with one development environment. Continue existing draft PR #3 on feature/netlify-development targeting dev. Existing Netlify site73688a4b-90ab-4eac-be6d-ef305f33ebc3 was renamed in place to pagechime; same team and privacy verified. Repository is now dn-lx/pagechime, verified with the same ID1431335742. Production remains paused; domains and new infrastructure are outside this change.
 
 ## Affected contracts and order
 

@@ -3,15 +3,13 @@ import AxeBuilder from "@axe-core/playwright";
 import { longBook } from "../fixtures/reading-books";
 async function login(page: Page, corpus?: "long" | "mixed" | "untimed") {
   if (corpus)
-    await page
-      .context()
-      .addCookies([
-        {
-          name: "reader-test-corpus",
-          value: corpus,
-          url: "http://localhost:4174",
-        },
-      ]);
+    await page.context().addCookies([
+      {
+        name: "reader-test-corpus",
+        value: corpus,
+        url: "http://localhost:4174",
+      },
+    ]);
   const u = await (await page.request.post("/__test/account")).json();
   await page.request.post("/api/reader/login", {
     headers: { Origin: "http://localhost:4174" },
@@ -78,6 +76,11 @@ test("reading pages preserve all text and move across chapter boundaries without
   await expect(
     page.getByRole("heading", { name: "The next page", exact: true }),
   ).toBeVisible();
+  // Browsing into another text chapter must leave the narrator where it was.
+  await expect(page.getByLabel("Chapter playback position")).toHaveValue("0");
+  await expect(
+    page.getByRole("button", { name: "Previous audio chapter", exact: true }),
+  ).toBeDisabled();
   await page
     .getByRole("button", { name: "Previous reading page", exact: true })
     .click();
@@ -85,6 +88,11 @@ test("reading pages preserve all text and move across chapter boundaries without
     "Every word deserves its place",
   );
   await expect(page.locator("canvas")).toHaveCount(0);
+  await page.getByRole("button", { name: "Follow audio", exact: true }).click();
+  await expect(page.locator(".ebook-heading")).toContainText("Chapter 1 of 2");
+  await expect(page.locator("[data-fragment]").first()).toContainText(
+    "Moment 1.",
+  );
   expect(errors).toEqual([]);
 });
 test("reading place survives reflow, audio saves and reload; appearance is accessible", async ({
@@ -127,11 +135,36 @@ test("reading place survives reflow, audio saves and reload; appearance is acces
     .getByRole("button", { name: "Pause narration", exact: true })
     .click();
   expect(await savedAnchor(page)).toEqual(anchor);
+  // A new device has the synced reading anchor but no local follow preference.
+  await page.evaluate(() => {
+    const id = JSON.parse(localStorage.getItem("leaf.reader.session")!).account
+      .id;
+    localStorage.removeItem(`leaf.account.${id}.follow.demo`);
+  });
   await page.reload();
   await page
     .getByRole("button", { name: "Continue reading", exact: true })
     .click();
   expect(await savedAnchor(page)).toEqual(anchor);
+  await expect(
+    page.getByRole("button", { name: "Follow audio", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
+  expect(
+    await page
+      .locator("[data-fragment]")
+      .evaluateAll(
+        (fragments, a) =>
+          fragments.some(
+            (el) =>
+              Number((el as HTMLElement).dataset.segment) === a.segment &&
+              Number((el as HTMLElement).dataset.start) <= a.offset &&
+              Number((el as HTMLElement).dataset.start) +
+                (el.textContent?.length || 0) >
+                a.offset,
+          ),
+        anchor,
+      ),
+  ).toBe(true);
   await expect(page.locator(".ebook-prose")).toHaveClass(/font-sans/);
   expect(
     await page.evaluate(
@@ -142,6 +175,63 @@ test("reading place survives reflow, audio saves and reload; appearance is acces
     path: info.outputPath("ebook-sepia.png"),
     fullPage: true,
   });
+});
+test("audio advancing to the next chapter preserves a manual reading page until following resumes", async ({
+  page,
+}) => {
+  await login(page, "long");
+  await page
+    .getByRole("button", { name: "Next reading page", exact: true })
+    .click();
+  const anchor = await savedAnchor(page);
+  await page.getByLabel("Chapter playback position").evaluate((el) => {
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )!.set!;
+    setter.call(el, 7.8);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page
+    .getByRole("button", { name: "Play narration", exact: true })
+    .click();
+  await expect(page.locator(".player-book")).toContainText("The next page");
+  await expect(page.locator(".ebook-heading")).toContainText("Chapter 1 of 2");
+  expect(await savedAnchor(page)).toEqual(anchor);
+  await page.getByRole("button", { name: "Follow audio", exact: true }).click();
+  await expect(page.locator(".ebook-heading")).toContainText("Chapter 2 of 2");
+  await page
+    .getByRole("button", { name: "Pause narration", exact: true })
+    .click();
+});
+test("untimed books retain manual PDF position after reopening", async ({
+  page,
+}) => {
+  await login(page, "untimed");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.getByLabel("PDF page number").fill("2");
+  await expect(page.getByLabel("PDF page number")).toHaveValue("2");
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Continue reading", exact: true })
+    .click();
+  await expect(page.getByLabel("PDF page number")).toHaveValue("2");
+  await expect(page.locator("canvas")).toBeVisible();
+});
+test("a chapter without timed text opens its source PDF page without seeking the audio", async ({
+  page,
+}) => {
+  await login(page, "mixed");
+  await page
+    .getByRole("button", { name: "Next reading page", exact: true })
+    .click();
+  await expect(page.getByLabel("PDF page number")).toHaveValue("2");
+  await expect(page.locator("canvas")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Previous audio chapter", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByLabel("Chapter playback position")).toHaveValue("0");
 });
 test("selected quotations become private highlights and notes and reopen at their text location", async ({
   page,

@@ -82,7 +82,16 @@ http
       let body: Buffer, type: string;
       if (path === "/library.json") {
         body = Buffer.from(
-          JSON.stringify({ books: [{ url: "/books/demo/book.json" }] }),
+          JSON.stringify({
+            books: [
+              {
+                url:
+                  process.env.READER_TEST_MANIFEST === "1"
+                    ? "/books/manifest/book.json"
+                    : "/books/demo/book.json",
+              },
+            ],
+          }),
         );
         type = "application/json";
       } else if (path.startsWith("/books/demo/")) {

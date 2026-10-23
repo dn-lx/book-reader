@@ -19,4 +19,4 @@ Retain legacy persistence/native IDs and deployed backend endpoint/schema. Escap
 
 ## Evidence
 
-Pending implementation and exact-head verification in the linked PR. REQ-006/007 hosted acceptance remains separate until real deployment is verified.
+Implemented in PR #4. Shared lossless coverage verifies all986 Manifest passages at four layouts. Twenty unit/contracts, fourteen new browser/selection/restore checks plus existing reader/account flows, both full-content native exports, Next/types/budget and independent review pass; see docs/PAGECHIME-VERIFICATION.md for exact scope and device limits. Final-head CI is required before dev merge. REQ-004/006/007 hosted acceptance remains separate until real deployment is verified.

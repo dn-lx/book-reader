@@ -6,7 +6,7 @@ Updated 2026-10-23. Accounts are standalone rows in the Me+ project; no `auth.us
 
 `book_reader_accounts` holds a normalized unique username, display name, salted PBKDF2-SHA256 password hash, active flag, reader/admin role and session generation. Passwords require at least 12 characters. `book_reader_sessions` stores SHA256 hashes of random 256-bit bearer tokens with a seven-day absolute expiry. Account access changes and session creation lock the same row; pausing/restoring access invalidates older sessions.
 
-`book_reader_state` stores account-owned bookmark, note and progress records. The authenticated session supplies ownership; a client-supplied account binding also rejects stale-tab writes. Updates compare revisions; null tombstones preserve deletions across devices. Pending edits and their original revisions survive offline reloads. Conflicts keep the local copy and offer **Keep changes from this device** in account settings. Cloud changes load when signing in/reopening the reader; this is not realtime collaboration. Imported book files stay on the device.
+`book_reader_state` stores account-owned bookmark, note and progress records. Optional reading anchors and quotation/highlight ranges use this same JSON state; legacy records remain accepted. Edge Function v2 validates the additive fields without schema/grant changes. The authenticated session supplies ownership; a client-supplied account binding also rejects stale-tab writes. Updates compare revisions; null tombstones preserve deletions across devices. Pending edits and their original revisions survive offline reloads. Conflicts keep the local copy and offer **Keep changes from this device** in account settings. Cloud changes load when signing in/reopening the reader; this is not realtime collaboration. Imported book files stay on the device.
 
 Web uses a secure HttpOnly host-only cookie through the Netlify function. Expo stores its token in SecureStore. Passwords are never persisted on the device. Logout clears private UI/audio first and revokes the server session. If offline, the browser retains the HttpOnly token plus a local logout intent; Expo retains a separate SecureStore revocation token. Retry happens before a new sign-in. The BFF deliberately avoids clearing cookies in delayed responses that could overwrite a newer login in another tab; a revoked cookie has no server authority.
 
@@ -28,7 +28,7 @@ There is no public signup or automatic email. Password reset/self-service passwo
 
 ## Deploy the development version
 
-The authorized project is `pagechime-dev`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`, team `don-alex-perera`. Production PR #2 stays paused. No Netlify upload has succeeded yet.
+The authorized project is `pagechime`, ID `73688a4b-90ab-4eac-be6d-ef305f33ebc3`, team `don-alex-perera`. Production PR #2 stays paused. No Netlify upload has succeeded yet.
 
 `netlify.toml` publishes `apps/web/out`, bundles the BFF, and routes the media edge guard over `/books/*` and `/library.json`. Private media responses are no-store. The original Manifest files are ignored inputs already present in the execution workspace. A clean Git continuous deployment build does not include them; do not call an empty-library Git deploy the complete Manifest deployment.
 
@@ -59,4 +59,4 @@ Still required: successful real-account HTTP login/state flows, actual Netlify e
 
 ## Pagechime compatibility
 
-The same Netlify project is now pagechime-dev. Retain the legacy leaf.* device-storage/cache namespaces, native app.dnlx.leaf identifiers, custom account tables and deployed book-reader-api endpoint. These stable internal identities preserve account data and installed-app upgrade paths. Host-only cookies and device-only browser imports/caches are bound to the original hostname and do not migrate to a renamed Netlify origin; sign in again to restore server-synced notes/bookmarks. No successful old-origin deploy has been verified.
+The same Netlify project is now pagechime. Retain the legacy leaf.* device-storage/cache namespaces, native app.dnlx.leaf identifiers, custom account tables and deployed book-reader-api endpoint. These stable internal identities preserve account data and installed-app upgrade paths. Host-only cookies and device-only browser imports/caches are bound to the original hostname and do not migrate to a renamed Netlify origin; sign in again to restore server-synced notes/bookmarks. No successful old-origin deploy has been verified.

@@ -96,7 +96,7 @@ For production projects, adapt `docs/templates/OPERATIONS-RUNBOOK-TEMPLATE.md` o
 
 ## Pagechime runtime identity and recovery
 
-- Development host: Netlify pagechime-dev, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Project exists with team login; no successful upload yet. Follow [reader account/deployment setup](READER-ACCOUNTS.md).
+- Development host: Netlify pagechime, ID73688a4b-90ab-4eac-be6d-ef305f33ebc3, teamdon-alex-perera. Project exists with team login; no successful upload yet. Follow [reader account/deployment setup](READER-ACCOUNTS.md).
 - Website source: dn-lx/pagechime, feature→dev→approved prod. User currently authorized development deployment; production PR#2 stays paused. Keep the actual source SHA and ready deploy URL in Current Handoff after uploading. A branch name or successful build does not prove a branch deploy exists.
 - Website artifact: Next.js static export apps/web/out, Netlify BFF and protected-media edge function. Complete private Manifest inputs remain ignored, outside public Git. A clean Git build has no private catalog.
 - Database/API: existing Me+ project wbqnctrvxohxwiaignhg, isolated book_reader_* tables and book-reader-api v1. Custom accounts do not require Supabase Auth. Both schema migrations are additive and applied; avoid dropping them on application rollback because they hold reader notes/progress. Keep service-role credentials server-side.
