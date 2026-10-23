@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-No additional changes.
+Planned: Me+ standalone reader accounts, personal notes and bookmarks, and Netlify development delivery.
 
 ## [0.1.0] - 2026-10-23
 

@@ -33,3 +33,16 @@ Evidence for REQ-001–003: 4 core tests; 12 desktop/mobile browser checks; actu
 - Keep full tooling audit visible; update the dependency when a verified patch becomes available.
 - Signed/native store and Expo OTA workflows require renewed dependency/security review and real-device verification.
 - Evidence and reachability assessment: docs/SECURITY-REVIEW.md.
+
+## [ ] REQ-006 — Netlify development delivery
+- Deploy from the existing dev integration branch; keep prod release paused.
+- Use Netlify team don-alex-perera and site book-reader-dnlx-dev; preserve privacy until app access is enforced.
+- Verify a real ready deploy, source revision, assets and access controls; report any necessary account connection action precisely.
+
+## [ ] REQ-007 — Me+ standalone reader accounts and personal notes
+- Custom username/password accounts live in isolated Me+ tables; passwords are salted hashes, never plain text. Supabase Auth users are not required.
+- Server-side access checks, expiring/revocable sessions and login rate limits protect both data and book files.
+- Bookmarks, notes and reading places belong to the authenticated account across web and mobile. Account switching does not expose another reader's device or server data.
+- Readers can create/edit/delete notes at a passage/page. Administrators can provision and disable access without sending unsolicited messages.
+- Acceptance: independent security review; two-account ownership/negative-path tests; browser login, notes, logout/switch and offline-isolation checks; native types/exports with device limits stated.
+- Plan: docs/plans/REQ-007-reader-accounts.md.
