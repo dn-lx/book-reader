@@ -28,7 +28,7 @@ Each segment may have `words: [{start,end,from,to}]`: chapter seconds and origin
 
 ## Matching British Google Neural2
 
-The owner requested a new Google Cloud project. Project sign-in/billing remains a connection step; no paid synthesis has run. Default is British female `en-GB-Neural2-A`, rate `0.95`, starting from the same text as Emma. Audition this and optionally `en-GB-Neural2-F` before choosing the final voice. Match accent, warmth, punctuation and pace by listening; quality and emotional expression cannot be guaranteed from a voice name. Google's documented Neural2 emotion styles apply to specific US voices, so the British setup does not send unsupported emotion controls.
+Owner-selected Google Cloud project: `project-89a9b506-ff91-4cd1-a2d`. Billing/API enablement and authentication still require verification; no paid synthesis has run. The console and Cloud Shell are currently unavailable in the agent browser. Default is British female `en-GB-Neural2-A`, rate `0.95`, starting from the same text as Emma. Audition this and optionally `en-GB-Neural2-F` before choosing the final voice. Match accent, warmth, punctuation and pace by listening; quality and emotional expression cannot be guaranteed from a voice name. Google's documented Neural2 emotion styles apply to specific US voices, so the British setup does not send unsupported emotion controls.
 
 Create a project in the owner's Google Cloud account, attach billing, enable **Cloud Text-to-Speech API**, install Google Cloud CLI, then authenticate outside Pagechime. Never send Google credentials in chat or place ADC/service-account files in Next/Expo/Git.
 
