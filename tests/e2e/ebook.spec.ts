@@ -1,7 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { longBook } from "../fixtures/reading-books";
-async function login(page: Page, corpus?: "long" | "mixed" | "untimed") {
+async function login(
+  page: Page,
+  corpus?: "long" | "mixed" | "untimed" | "editions",
+) {
   if (corpus)
     await page.context().addCookies([
       {
@@ -274,4 +277,46 @@ test("selected quotations become private highlights and notes and reopen at thei
     path: info.outputPath("ebook-highlight.png"),
     fullPage: true,
   });
+});
+
+test("PDF edition survives chapter changes and reload; unlisted saved addresses fall back safely", async ({
+  page,
+}) => {
+  await login(page, "editions");
+  await page.getByRole("button", { name: "Original PDF", exact: true }).click();
+  await page.getByLabel("PDF edition").selectOption({ label: "Cozy PDF" });
+  await expect(page.locator(".pdf-loading")).toHaveCount(0);
+  await page.getByRole("button", { name: "Next audio chapter" }).click();
+  await expect(page.getByLabel("PDF edition")).toHaveValue(
+    "/books/demo/cozy.pdf",
+  );
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Continue reading", exact: true })
+    .click();
+  await expect(page.getByLabel("PDF edition")).toHaveValue(
+    "/books/demo/cozy.pdf",
+  );
+  const outside: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().startsWith("https://unlisted.invalid/"))
+      outside.push(request.url());
+  });
+  await page.evaluate(() => {
+    const id = JSON.parse(localStorage.getItem("leaf.reader.session")!).account
+      .id;
+    localStorage.setItem(
+      `leaf.account.${id}.pdf.edition.demo`,
+      JSON.stringify("https://unlisted.invalid/private.pdf"),
+    );
+  });
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Continue reading", exact: true })
+    .click();
+  await expect(page.getByLabel("PDF edition")).toHaveValue(
+    "/books/demo/book.pdf",
+  );
+  await expect(page.locator(".pdf-loading")).toHaveCount(0);
+  expect(outside).toEqual([]);
 });

@@ -6,7 +6,8 @@ Accepted scope: Next.js website and Expo React Native app, based on Agent Projec
 - Restore Manifest in Action from the supplied 237-page PDF/EPUB editions and complete 19-chapter audiobook, with a reliable private build asset source outside public Git.
 - Provide the Kindle-style reading/PDF experience with real optional word timestamps, active-word audio following and preserved notes/selection/reading anchors across web/native.
 - Fix catalog loading/cache failures and correctly distinguish valid empty, offline fallback and failed loads.
-- Prepare British female Neural2 with SSML word timepoints, resumable generation, credential/voice checks and clear cost controls; live synthesis requires a connected Google Cloud project.
+- Prepare British female Neural2 with SSML word timepoints and resumable generation. Owner update 2026-10-24: maximum approved Google spend is $0; disable Google network requests until a later explicit owner instruction. Existing Emma playback remains available.
+- Remember each account’s selected packaged PDF edition across chapter changes and reloads; reject saved addresses outside the book’s current edition list. Guest preferences remain memory-only.
 - Verify actual-book text/audio/page coverage, desktop/mobile runtime/screenshots, worker/private-storage negative paths, independent review, exports/budget and develop-only deployment.
 - Plan: docs/plans/REQ-012-manifest-library.md. Restored 19-chapter/237-page assets and verified private source; real word following and cache fixes implemented. Remains open for live Google synthesis and protected hosted/native acceptance.
 

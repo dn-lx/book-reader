@@ -84,6 +84,11 @@ test("PDF, voice setup, theme and accessible layout", async ({
   await expect(
     page.getByRole("button", { name: /Google Neural2/ }),
   ).toBeDisabled();
+  await expect(page.getByRole("dialog")).toContainText("Not enabled");
+  await page.screenshot({
+    path: info.outputPath("narration-paused.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await menu(page);
   await page.getByRole("button", { name: "Use night theme" }).click();

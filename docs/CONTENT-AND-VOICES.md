@@ -26,25 +26,20 @@ Owner seeding uses `scripts/seed-private-library.mjs` with endpoint/upload capab
 
 Each segment may have `words: [{start,end,from,to}]`: chapter seconds and original UTF-16 offsets. Cues are bounded, ordered and non-overlapping. Legacy passage-only imports still work. Optional editions list bounded same-book PDF/EPUB URLs. See shared validation and `word-following.ts`.
 
-## Matching British Google Neural2
+## Google Neural2 — paused under the $0 policy
 
-Owner-selected Google Cloud project: `project-89a9b506-ff91-4cd1-a2d`. Billing/API enablement and authentication still require verification; no paid synthesis has run. The console and Cloud Shell are currently unavailable in the agent browser. Default is British female `en-GB-Neural2-A`, rate `0.95`, starting from the same text as Emma. Audition this and optionally `en-GB-Neural2-F` before choosing the final voice. Match accent, warmth, punctuation and pace by listening; quality and emotional expression cannot be guaranteed from a voice name. Google's documented Neural2 emotion styles apply to specific US voices, so the British setup does not send unsupported emotion controls.
+Owner-selected Google Cloud project: `project-89a9b506-ff91-4cd1-a2d`. The owner reports finishing the API setup. Billing/API status and authentication cannot be read back in this session; the console and Cloud Shell remain unavailable. Maximum approved Google spend is **$0**. No Google synthesis has run.
 
-Create a project in the owner's Google Cloud account, attach billing, enable **Cloud Text-to-Speech API**, install Google Cloud CLI, then authenticate outside Pagechime. Never send Google credentials in chat or place ADC/service-account files in Next/Expo/Git.
+`scripts/google-narration.py` now blocks Google requests at CLI entry, credential acquisition and the actual HTTP wrapper. `--check`, `--generate`, cached chunks, environment settings and a large `--max-cost-usd` do not override this pause. Only offline preflight remains available. Changing the policy requires a later explicit owner instruction and review. Existing Emma playback and other prepared local audio make no Google API calls.
 
 ```sh
-gcloud auth application-default login
-gcloud auth application-default set-quota-project YOUR_PROJECT
-gcloud services enable texttospeech.googleapis.com --project YOUR_PROJECT
-# Offline cost preflight, then credential/voice check (no synthesis):
+# Offline only: estimates potential work without credentials or API calls.
 python scripts/google-narration.py --book apps/web/public/books/manifest/book.json
-python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --check
-# Explicitly budgeted short audition, only after owner approves charges:
-python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --sample --generate --max-cost-usd 0.02
-# After audition acceptance and full-book cost approval:
-python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --generate --max-cost-usd 4
+python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --sample
 ```
 
-Pricing checked 2026-10-24: Neural2 $16/million characters before free quota. SSML (except mark tags) and whitespace count. Current offline full preflight is 233,050 billable characters / upper estimate $3.7288, 1,149 bounded requests. The 110-word audition is 586 characters / $0.0094. These are estimates; confirm current pricing and account quota before generation. An explicit budget must cover the conservative estimate; the script never assumes free quota. See [pricing](https://cloud.google.com/text-to-speech/pricing), [voices](https://cloud.google.com/text-to-speech/docs/voices), [SSML marks](https://cloud.google.com/text-to-speech/docs/ssml#mark).
+This code guard controls Pagechime’s own preparation path, not the Cloud account or other applications. For provider-level prevention of Text-to-Speech usage, disable that API in the selected Google project. Existing/other resource charges are outside this local guard. The agent has not changed billing or disabled the provider API. Google bills use beyond its free allowance. Alerts-only budgets are notifications; current spend caps cover selected other services, omit Cloud Text-to-Speech and can bill in-flight overages. Do not treat those controls as a $0 guarantee. Sources checked 2026-10-24: [pricing](https://cloud.google.com/text-to-speech/pricing), [spend-cap coverage and limitations](https://docs.cloud.google.com/billing/docs/how-to/budgets-spend-caps), [disable Text-to-Speech](https://docs.cloud.google.com/text-to-speech/docs/get-started#disable_the_cloud_text-to-speech_api).
 
-Every word receives an SSML mark; provider timepoints must exist and be ordered. Missing marks stop preparation without guessing or automatically rebilling the cached response. Cache raw audio/timing privately for resuming. Google gets its own timing track, never Emma's. Only after all chapters succeed does the web voice picker link the alternate. Republish private assets/rebuild develop to distribute it. Native Google voice selection/packaging and live Google synthesis acceptance remain open until generated audio exists.
+The retained offline preparation design targets British female `en-GB-Neural2-A`, rate `0.95`, matching Emma’s text and accent. Any future authorization should start with listening to a short audition (optionally compare F). Emotional quality needs listening; Google’s documented Neural2 emotion styles for specific US voices do not support the British setup. Each voice has its own word timing track. Existing optional metadata links prepared recordings only after all chapters succeed; no client does on-demand cloud synthesis.
+
+Historical potential full-book estimate before free quota: 233,050 billable characters, 1,149 requests, $3.7288; short audition $0.0094. These are offline estimates, **not authorized charges**. The Google audio/voice selection and live synthesis acceptance remain open while the zero-spend pause is in force.

@@ -1315,15 +1315,14 @@ export default function ReaderApp() {
                       : books.find((b) => b.id === p.book?.id)
                             ?.alternateNarration
                         ? "Choose this narration"
-                        : "Voice audition in preparation"}
+                        : "Not enabled"}
                   </span>
                 </div>
               </button>
             </div>
             <p className="muted voice-intro">
-              The Google voice is being prepared to match Emma’s British accent
-              and gentle pace. It becomes available after its full narration is
-              ready.
+              Emma’s narration is ready to play. Google narration can be added
+              as a prepared recording.
             </p>
           </Modal>
         )}

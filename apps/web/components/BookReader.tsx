@@ -139,8 +139,18 @@ export default function BookReader({
     );
     return saved === "pdf" || !chapter.segments.length ? "pdf" : "text";
   });
-  const [pdfEdition, setPdfEdition] = useState(book.pdf);
+  const [pdfEdition, setPdfEdition] = useState(() => {
+    const saved = readSaved<unknown>("pdf.edition." + book.id, null);
+    return typeof saved === "string" &&
+      (saved === book.pdf ||
+        book.editions?.some((e) => e.kind === "pdf" && e.url === saved))
+      ? saved
+      : book.pdf;
+  });
   const { isGuest } = useAccount();
+  useEffect(() => {
+    writeSaved("pdf.edition." + book.id, pdfEdition);
+  }, [book.id, pdfEdition]);
   const [size, setSize] = useState({ width: 650, height: 560 });
   const [focus, setFocus] = useState(false),
     [selection, setSelection] = useState<AnnotationDraft | null>(null);

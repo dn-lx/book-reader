@@ -1,5 +1,7 @@
 """Synthetic regression tests only; no source book, network or billed API calls."""
-import importlib.util, unittest
+import importlib.util, unittest, io, json, sys
+from contextlib import redirect_stdout, redirect_stderr
+from unittest.mock import patch
 from pathlib import Path
 
 def script(name):
@@ -8,6 +10,27 @@ def script(name):
 
 google=script('google-narration');align=script('align-book')
 class Narration(unittest.TestCase):
+    def test_zero_spend_rejects_google_modes_before_auth_or_source_access(self):
+        self.assertFalse(google.GOOGLE_REQUESTS_ALLOWED)
+        for mode in [['--check'],['--generate','--max-cost-usd','1000000'],['--sample','--generate','--max-cost-usd','0.02']]:
+            with patch.object(sys,'argv',['google-narration.py','--book','missing-private-book.json','--project','project-89a9b506-ff91-4cd1-a2d',*mode]),patch.object(google,'access_token') as auth,patch.object(google.urllib.request,'urlopen') as request,redirect_stderr(io.StringIO()) as errors:
+                with self.assertRaises(SystemExit) as stopped:google.main()
+                self.assertEqual(stopped.exception.code,2)
+                self.assertIn('zero-spend policy',errors.getvalue())
+                auth.assert_not_called();request.assert_not_called()
+    def test_zero_spend_blocks_direct_provider_and_credential_boundaries(self):
+        with patch.object(google.urllib.request,'urlopen') as request,patch.object(google.subprocess,'check_output') as process:
+            with self.assertRaisesRegex(ValueError,'zero-spend policy'):google.open_google('https://texttospeech.googleapis.com',30)
+            with self.assertRaisesRegex(ValueError,'zero-spend policy'):google.access_token()
+            with self.assertRaisesRegex(ValueError,'zero-spend policy'):google.check_voice('fixture-project','en-GB-Neural2-A','fixture-not-a-token')
+            request.assert_not_called();process.assert_not_called()
+    def test_offline_preflight_remains_available_with_zero_approved_spend(self):
+        fixture=Path(__file__).parent/'fixtures'/'book.json'
+        with patch.object(sys,'argv',['google-narration.py','--book',str(fixture)]),patch.object(google.urllib.request,'urlopen') as request,redirect_stdout(io.StringIO()) as output:
+            google.main()
+            report=json.loads(output.getvalue().splitlines()[0])
+            self.assertFalse(report['googleRequestsAllowed']);self.assertEqual(report['maximumApprovedSpendUSD'],0)
+            request.assert_not_called()
     def test_provider_marks_unicode_and_billing(self):
         req=google.word_requests('Café 🌿 & a quiet thought.', 'en-GB-Neural2-A',.95)[0]
         self.assertLessEqual(len(req['payload']['input']['ssml'].encode()),4800)

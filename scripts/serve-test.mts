@@ -137,7 +137,7 @@ http
             : "audio.wav";
         // Isolated browser contexts choose a corpus without bypassing the real worker/auth path.
         const corpus =
-          /(?:^|; )reader-test-corpus=(long|mixed|untimed|words|mixedwords)(?:;|$)/.exec(
+          /(?:^|; )reader-test-corpus=(long|mixed|untimed|words|mixedwords|editions)(?:;|$)/.exec(
             req.headers.cookie || "",
           )?.[1];
         const wordBook = JSON.parse(
@@ -151,7 +151,14 @@ http
         const mixedWords = structuredClone(wordBook);
         mixedWords.chapters[0].segments[1].text =
           "A patient sentence carries this page onward. ".repeat(240);
+        const editionBook = JSON.parse(
+          await readFile("tests/fixtures/book.json", "utf8"),
+        );
+        editionBook.editions = [
+          { label: "Cozy PDF", kind: "pdf", url: "/books/demo/cozy.pdf" },
+        ];
         const variants = {
+          editions: editionBook,
           mixedwords: mixedWords,
           words: wordBook,
           long: longBook,

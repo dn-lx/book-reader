@@ -1240,19 +1240,19 @@ function PagechimeApp() {
                 </View>
                 <View
                   style={s.chapterRow}
-                  accessibilityLabel="Google Neural2, setup needed"
+                  accessibilityLabel="Google Neural2, not enabled"
                 >
                   <Feather name="headphones" size={23} color={colors.muted} />
                   <View>
                     <Text style={s.chapterText}>Google Neural2</Text>
                     <Text style={s.small}>
-                      British English · female · setup needed
+                      British English · female · not enabled
                     </Text>
                   </View>
                 </View>
                 <Text style={s.description}>
-                  Google narration will be available after Google Cloud is
-                  connected and the book’s audio is prepared.
+                  Emma’s narration is ready to play. Google narration can be
+                  added as a prepared recording.
                 </Text>
               </View>
             )}

@@ -1,6 +1,6 @@
 """Prepare matching British Neural2 narration with provider word timepoints.
-Default is an offline cost preflight. --check only verifies credentials/voice.
---generate sends the owner's text to Google and requires an explicit cost budget.
+Default is an offline cost preflight. Google network requests are paused under
+the owner's zero-spend requirement, including --check and --generate.
 """
 import argparse, base64, hashlib, json, math, re, shutil, subprocess, time, urllib.request
 from pathlib import Path
@@ -8,6 +8,17 @@ from xml.sax.saxutils import escape
 
 API='https://texttospeech.googleapis.com/v1beta1/text:synthesize'
 PRICE_DATE='2026-10-24'
+# Owner directive: approve no Google charges. Change only after explicit owner
+# authorization and review; CLI budgets/environment variables cannot enable calls.
+GOOGLE_REQUESTS_ALLOWED=False
+ZERO_SPEND_MESSAGE="Google API requests are disabled by Pagechime's zero-spend policy. Keep using the prepared Emma audio; offline preflight is available without --check or --generate."
+
+def require_google_requests():
+    if not GOOGLE_REQUESTS_ALLOWED: raise ValueError(ZERO_SPEND_MESSAGE)
+
+def open_google(request,timeout):
+    require_google_requests()
+    return urllib.request.urlopen(request,timeout=timeout)
 
 def duration(path):
     return float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',str(path)],text=True).strip())
@@ -45,18 +56,21 @@ def point_cues(request,response,length):
     return [{**{k:m[k] for k in ['from','to']},'start':values[i],'end':min(length,values[i+1])} for i,m in enumerate(request['marks'])]
 
 def access_token():
+    require_google_requests()
     if not shutil.which('gcloud'): raise ValueError('Install the Google Cloud CLI and complete Application Default Credentials sign-in first.')
     try: return subprocess.check_output(['gcloud','auth','application-default','print-access-token'],text=True,stderr=subprocess.DEVNULL).strip()
     except subprocess.CalledProcessError: raise ValueError('Google Cloud sign-in is required. Run gcloud auth application-default login outside the application.')
 
 def check_voice(project,voice,token):
     request=urllib.request.Request('https://texttospeech.googleapis.com/v1/voices?languageCode=en-GB',headers={'Authorization':'Bearer '+token,'x-goog-user-project':project})
-    with urllib.request.urlopen(request,timeout=30) as response: data=json.load(response)
+    with open_google(request,timeout=30) as response: data=json.load(response)
     if not any(v.get('name')==voice and v.get('ssmlGender')=='FEMALE' for v in data.get('voices',[])): raise ValueError('The selected British female voice is not available in this project.')
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--book',type=Path,required=True);p.add_argument('--project');p.add_argument('--voice',default='en-GB-Neural2-A');p.add_argument('--rate',type=float,default=.95);p.add_argument('--generate',action='store_true');p.add_argument('--check',action='store_true');p.add_argument('--sample',action='store_true');p.add_argument('--max-cost-usd',type=float);p.add_argument('--price-per-million',type=float,default=16);p.add_argument('--cache',type=Path,default=Path('.cache/pagechime-neural2'))
     a=p.parse_args()
+    if (a.generate or a.check) and not GOOGLE_REQUESTS_ALLOWED:
+        p.error(ZERO_SPEND_MESSAGE)
     if not re.fullmatch(r'en-GB-Neural2-[A-Z]',a.voice) or not .8<=a.rate<=1.1: p.error('Use a British Neural2 voice and a natural narration rate of 0.8–1.1.')
     if a.price_per_million<=0 or not math.isfinite(a.price_per_million): p.error('Use a valid current Google price.')
     book=json.loads(a.book.read_text());chapters=book['chapters'];plans=[]
@@ -66,9 +80,9 @@ def main():
     requests=[r for c in plans for segment in c for r in segment]
     pending=[r for r in requests if not (a.cache/(r['key']+'.json')).exists() or not (a.cache/(r['key']+'.wav')).exists()]
     characters=sum(r['characters'] for r in pending);estimate=math.ceil(characters*a.price_per_million/1_000_000*10000)/10000
-    print(json.dumps({'mode':'audition' if a.sample else 'book','voice':a.voice,'speakingRate':a.rate,'requests':len(requests),'uncachedRequests':len(pending),'billableCharactersBeforeFreeQuota':characters,'estimatedMaximumUSD':estimate,'pricePerMillion':a.price_per_million,'priceChecked':PRICE_DATE,'timing':'SSML word-start marks and provider END; verify the audition before full synthesis'}),flush=True)
+    print(json.dumps({'mode':'audition' if a.sample else 'book','voice':a.voice,'speakingRate':a.rate,'requests':len(requests),'uncachedRequests':len(pending),'billableCharactersBeforeFreeQuota':characters,'estimatedMaximumUSD':estimate,'pricePerMillion':a.price_per_million,'priceChecked':PRICE_DATE,'googleRequestsAllowed':GOOGLE_REQUESTS_ALLOWED,'maximumApprovedSpendUSD':0,'timing':'SSML word-start marks and provider END; verify the audition before full synthesis'}),flush=True)
     if not a.generate and not a.check:
-        print('Offline preflight only. No Google request or charge. Confirm current pricing and connect a Google Cloud project.');return
+        print('Offline preflight only. No Google request or charge. Google API requests are paused under the owner\'s zero-spend policy.');return
     if not a.project or not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',a.project): p.error('Provide the owner’s Google Cloud project ID.')
     if a.generate and (a.max_cost_usd is None or not math.isfinite(a.max_cost_usd) or a.max_cost_usd<estimate): p.error('Generation needs --max-cost-usd at least the conservative preflight estimate; free quota is not assumed.')
     try: token=access_token();check_voice(a.project,a.voice,token)
@@ -87,7 +101,7 @@ def main():
                 if not wav.exists() or not meta.exists():
                     if time.time()-refreshed>1800: token=access_token();refreshed=time.time()
                     http=urllib.request.Request(API,data=json.dumps(request['payload']).encode(),headers={'Authorization':'Bearer '+token,'x-goog-user-project':a.project,'Content-Type':'application/json'})
-                    with urllib.request.urlopen(http,timeout=90) as response: result=json.load(response)
+                    with open_google(http,timeout=90) as response: result=json.load(response)
                     # Preserve responses before validation so a bad/missing mark is not silently billed again.
                     wav.write_bytes(base64.b64decode(result.pop('audioContent')));meta.write_text(json.dumps(result))
                 length=duration(wav);result=json.loads(meta.read_text());cues=point_cues(request,result,length)

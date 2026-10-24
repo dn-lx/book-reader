@@ -20,3 +20,9 @@ Accepted 2026-10-24. Work directly on develop; do not change main or the outer N
 ## Compatibility and recovery
 
 Optional words/editions preserve existing book imports and account records. No analytics. Alignment tooling is offline only, not a web dependency. Asset uploads use immutable content-version paths; publishing is atomic, and build downloads verify every digest. Roll back code/deploy without making the bucket public or weakening auth. Retain the original audiobook/editions in their original locations. Missing Google auth remains an explicit final connection step after all setup work is reviewable.
+
+## Owner update — zero Google spend and continued reading work
+
+2026-10-24: Owner reports completing the Cloud API step and requires no billing. The $0 limit supersedes all earlier possible paid auditions/full-book examples. Enforce the pause at CLI entry, credential acquisition and Google HTTP boundaries; neither --check/--generate nor a CLI budget may enable requests. Offline preflight remains available. Retain existing Emma audio. Provider account billing and unrelated usage cannot be verified from this session. Do not assume the free quota or a budget alert is a hard stop.
+
+Continue the reading experience by persisting the chosen packaged PDF edition through chapter changes/reloads in existing account-local preference storage, with an allowlist check on restore. Guest preferences remain ephemeral. No backend schema, secret, API call or paid service is needed for this change. Add regression checks for both cost boundaries and edition restore/rejected addresses, review the cost guard independently, verify web/native builds and targeted desktop/mobile UI, and publish develop only. Preserve the existing Netlify private-log/access blocker; do not repeat its declined sign-in.
