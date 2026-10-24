@@ -3,7 +3,7 @@
 Updated 2026-10-24.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"0ef9efd5ec884453a93afdff2454934ac589f61b","next_step":"Publish reviewed early-seek metadata race fix to develop and verify current CI/deploy. Library connection is repaired. Keep Google blocked and main unchanged.","updated_at":"2026-10-24T10:52:43.636064+00:00"}
+{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"6e38106e49e7141390d6b1530e8fe25d63c432d9","next_step":"Develop library/deploy and early-seek fix are live. Review member/native runtime acceptance and book timing quality; Google remains paused under owner zero-spend policy. Main promotion requires owner request.","updated_at":"2026-10-24T11:15:53.012035+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Active work and owner policy
@@ -12,7 +12,7 @@ REQ-012, directly on develop with null PR. The owner requires **$0 Google spend*
 
 Owner supplied Cloud project `project-89a9b506-ff91-4cd1-a2d` and reports completing API setup. No authenticated readback, synthesis or provider billing/API change was performed by the agent. Console and Cloud Shell return Site Unavailable; no Cloud Text-to-Speech management connector was found. Do not assume free quota, alerts or provider spend caps guarantee zero charges. Current spend caps do not cover Cloud Text-to-Speech. See docs/CONTENT-AND-VOICES.md.
 
-The reader now restores the account-local packaged PDF edition across chapter changes/reload, accepting only book.pdf/current PDF editions; guests use their memory-only preferences. No sync schema/provider change. Local validation passes:36 unit/contracts (including6 Python cost/word tests),4 targeted desktop/mobile cases, Next export, Android/iOS Hermes exports and 563/900KiB shell. Voice-dialog screenshots were inspected; axe/overflow checks passed. Independent review:6 Python/3 targeted Node checks, no material findings. Source `04b1399eaca1bd4c1ae276722949e44d8ef26678` is published on develop with `[skip netlify]` to avoid repeating the known failed hosted build before its access blocker is resolved. GitHub stores exact-head check status; inspect the current develop head. No Google/provider mutation or paid request was made. Keep REQ-012 open for protected hosted/native acceptance; Google synthesis stays paused under the owner policy.
+The reader restores only packaged PDF editions in account-local preferences; guests retain memory-only settings. Word-following and the early-seek metadata fix are live on develop. Current local checks:36 unit/contracts (including6 Python cost/word tests), all types, Next export,8 targeted word browser cases,2 actual-book desktop/mobile cases and563/900KiB shell. Independent source/security review has no material findings. REQ-012 stays open for member/native acceptance and timing-quality review; Google synthesis remains paused.
 
 ## Verified book and source
 
@@ -34,7 +34,7 @@ Netlify repair 2026-10-24: prior Builds-only upserts did not persist. Independen
 
 Netlify pagechime site 73688a4b-90ab-4eac-be6d-ef305f33ebc3, team don-alex-perera, Git-linked dn-lx/pagechime. Production branch main; only develop branch deploys; npm run build → apps/web/out; reader BFF/media edge. Non-production team-login gate stays unchanged.
 
-Repair source 0ef9efd5ec884453a93afdff2454934ac589f61b deploy 6adc8f9361ac54958f02fa9d is ready, branch-deploy/develop with reader function and media edge. Authenticated hosted guest acceptance: library 1 book/19 chapters, advancing Emma playback, active word, chapter10, both rendered PDFs, Google disabled. Main/gate unchanged. CI caught an early-seek metadata race: deterministic desktop/mobile media-gated tests reproduced reset4.2→0. Reviewed requestedTime fix passes all8 word browser cases. Current follow-up still needs CI/deploy verification. Member login and native/device acceptance remain separate. Historical failure evidence: docs/REQ-012-VERIFICATION.md.
+Current runtime source6e38106e49e7141390d6b1530e8fe25d63c432d9 deploy6adc929cc4e8e1686f1b482d: ready, develop/branch-deploy, reader function/media edge. Hosted guest catalog shows1 book/19 chapters after reload; Emma advances, active word renders, chapters10/19 and both PDF editions render. Google disabled; main/gate unchanged. Prior source0ef9efd repaired the connection. CI exposed the early-seek race; deterministic regression failed4.2→0 before the reviewed fix and passes after. All5 exact-source CI suites pass (54 fixture browser cases;2 private cases pass separately; Android/iOS exports). Details: docs/REQ-012-VERIFICATION.md. Member login and native/device acceptance remain separate.
 
 No main promotion: main remains 2396458e46609beb8c448221a647491fb90363c9. Do not create a release PR, reopen superseded PR #2 or alter historical branches. Use GitHub MCP for writes. Preserve leaf.* keys, app.dnlx.leaf IDs, book-reader-api and book_reader_* identities.
 
