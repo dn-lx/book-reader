@@ -3,7 +3,7 @@
 Updated 2026-10-24.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"testing","last_verified_sha":"99992b6cae14f0eeed5c7f52d356ca8875023e69","next_step":"Publish reviewed Google $0 request lock and PDF edition preferences on develop; verify exact-head CI. Preserve the existing Netlify private-log access blocker, no Google calls or main promotion.","updated_at":"2026-10-24T10:27:08.152041+00:00"}
+{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"blocked","last_verified_sha":"04b1399eaca1bd4c1ae276722949e44d8ef26678","next_step":"The $0 Google lock and PDF edition restore are published on develop. Verify current-head GitHub checks, then resolve the separate Netlify private-log/build-connection access blocker. Keep Google requests paused and main unchanged.","updated_at":"2026-10-24T10:29:23.658322+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Active work and owner policy
@@ -12,7 +12,7 @@ REQ-012, directly on develop with null PR. The owner requires **$0 Google spend*
 
 Owner supplied Cloud project `project-89a9b506-ff91-4cd1-a2d` and reports completing API setup. No authenticated readback, synthesis or provider billing/API change was performed by the agent. Console and Cloud Shell return Site Unavailable; no Cloud Text-to-Speech management connector was found. Do not assume free quota, alerts or provider spend caps guarantee zero charges. Current spend caps do not cover Cloud Text-to-Speech. See docs/CONTENT-AND-VOICES.md.
 
-The reader now restores the account-local packaged PDF edition across chapter changes/reload, accepting only book.pdf/current PDF editions; guests use their memory-only preferences. No sync schema/provider change. Local validation passes:36 unit/contracts (including6 Python cost/word tests),4 targeted desktop/mobile cases, Next export, Android/iOS Hermes exports and 563/900KiB shell. Voice-dialog screenshots were inspected; axe/overflow checks passed. Independent review:6 Python/3 targeted Node checks, no material findings. Develop publication is pending. Keep REQ-012 open for protected hosted/native acceptance; Google synthesis stays paused under the owner policy.
+The reader now restores the account-local packaged PDF edition across chapter changes/reload, accepting only book.pdf/current PDF editions; guests use their memory-only preferences. No sync schema/provider change. Local validation passes:36 unit/contracts (including6 Python cost/word tests),4 targeted desktop/mobile cases, Next export, Android/iOS Hermes exports and 563/900KiB shell. Voice-dialog screenshots were inspected; axe/overflow checks passed. Independent review:6 Python/3 targeted Node checks, no material findings. Source `04b1399eaca1bd4c1ae276722949e44d8ef26678` is published on develop with `[skip netlify]` to avoid repeating the known failed hosted build before its access blocker is resolved. GitHub stores exact-head check status; inspect the current develop head. No Google/provider mutation or paid request was made. Keep REQ-012 open for protected hosted/native acceptance; Google synthesis stays paused under the owner policy.
 
 ## Verified book and source
 
