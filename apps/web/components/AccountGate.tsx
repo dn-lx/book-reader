@@ -1,14 +1,26 @@
 "use client";
 import { useEffect, useState, useRef, type ReactNode } from "react";
-import { Leaf, ArrowRight, Headphones, BookOpen } from "@phosphor-icons/react";
+import {
+  Leaf,
+  ArrowRight,
+  Headphones,
+  BookOpen,
+  Eye,
+  EyeSlash,
+} from "@phosphor-icons/react";
 import {
   readerClient,
+  readerDetailsError,
   ReaderSync,
   ReaderApiError,
   type ReaderSession,
   type CloudItem,
 } from "@pagechime/core";
-import { createReaderStorage, type ReaderStorage } from "../lib/storage";
+import {
+  createGuestStorage,
+  createReaderStorage,
+  type ReaderStorage,
+} from "../lib/storage";
 import { AccountContext } from "../lib/account";
 const api = readerClient("/api/reader");
 // Keep the original storage keys so a branding update preserves sessions and pending logout.
@@ -59,13 +71,17 @@ export default function AccountGate({ children }: { children: ReactNode }) {
     [error, setError] = useState(""),
     [syncMessage, setSyncMessage] = useState(""),
     [invite, setInvite] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [guest, setGuest] = useState(false),
+    [register, setRegister] = useState(false),
+    [showPassword, setShowPassword] = useState(false);
   const activeId = useRef<string | null>(null),
     generation = useRef(0);
   const engine = useRef<ReaderSync | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   async function enter(s: ReaderSession, offline = false) {
     const attempt = ++generation.current;
+    setGuest(false);
     activeId.current = s.account.id;
     engine.current?.close();
     const scopedApi = readerClient("/api/reader", () => null, s.account.id);
@@ -147,13 +163,17 @@ export default function AccountGate({ children }: { children: ReactNode }) {
       setInvite(code);
       history.replaceState(null, "", location.pathname);
     }
+    const initial = generation.current;
     (async () => {
       try {
         if (localStorage.getItem("leaf.reader.logged-out")) {
           await revoke();
         }
-        await enter(await api<ReaderSession>("/me"));
+        const restored = await api<ReaderSession>("/me");
+        if (initial !== generation.current) return;
+        await enter(restored);
       } catch (e) {
+        if (initial !== generation.current) return;
         let saved: ReaderSession | null = null;
         try {
           saved = JSON.parse(localStorage.getItem(remembered) || "null");
@@ -195,6 +215,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
         engine.current?.close();
         activeId.current = null;
         setSession(null);
+        setGuest(false);
         setStorage(null);
         void workerScope(null);
         setError("Your account changed in another tab. Please sign in again.");
@@ -270,6 +291,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
     // Unmount the reader before clearing the worker so playback and object URLs stop.
     activeId.current = null;
     setSession(null);
+    setGuest(false);
     setStorage(null);
     try {
       localStorage.removeItem(remembered);
@@ -288,11 +310,52 @@ export default function AccountGate({ children }: { children: ReactNode }) {
     setSyncMessage("");
     setBusy(false);
   }
-  if (session && storage)
+  function requestAccount() {
+    generation.current++;
+    setGuest(false);
+    setStorage(null);
+    setError("");
+    setRegister(false);
+    setLoading(false);
+  }
+  async function enterGuest() {
+    const attempt = ++generation.current;
+    setBusy(true);
+    engine.current?.close();
+    if (timer.current) clearTimeout(timer.current);
+    try {
+      localStorage.removeItem(remembered);
+      localStorage.setItem("leaf.reader.logged-out", "1");
+    } catch {}
+    activeId.current = null;
+    setSession(null);
+    setError("");
+    setSyncMessage("");
+    try {
+      await revoke();
+      await workerScope(null, undefined, () => attempt === generation.current);
+      if (attempt !== generation.current) return;
+      setStorage(createGuestStorage());
+      setGuest(true);
+    } catch {
+      if (attempt === generation.current)
+        setError(
+          "Guest reading could not open because sign-out cleanup did not finish. Check your connection and try again.",
+        );
+    } finally {
+      if (attempt === generation.current) {
+        setLoading(false);
+        setBusy(false);
+      }
+    }
+  }
+  if ((session || guest) && storage)
     return (
       <AccountContext.Provider
         value={{
-          account: session.account,
+          account: session?.account ?? null,
+          isGuest: guest,
+          requestAccount,
           storage,
           logout,
           syncMessage,
@@ -327,12 +390,12 @@ export default function AccountGate({ children }: { children: ReactNode }) {
         <h1>
           {loading
             ? "Settling you in…"
-            : invite
+            : invite || register
               ? "Make yourself at home."
               : "Welcome back."}
         </h1>
         <p className="account-intro">
-          {invite
+          {invite || register
             ? "Choose your account details. Your books, thoughts and little bookmarks will have a place of their own."
             : "Your next chapter is waiting. Sign in to pick up where you left off."}
         </p>
@@ -340,24 +403,47 @@ export default function AccountGate({ children }: { children: ReactNode }) {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setBusy(true);
               setError("");
               const data = new FormData(e.currentTarget);
+              const invalid = readerDetailsError(
+                String(data.get("username") || ""),
+                String(data.get("password") || ""),
+                invite || register
+                  ? String(data.get("displayName") || "")
+                  : undefined,
+              );
+              if (invalid) {
+                setError(invalid);
+                return;
+              }
+              setBusy(true);
               try {
                 if (localStorage.getItem("leaf.reader.logged-out"))
                   await revoke();
-                await enter(
-                  await api<ReaderSession>(
-                    invite ? "/activate" : "/login",
-                    "POST",
-                    {
-                      username: data.get("username"),
-                      password: data.get("password"),
-                      displayName: data.get("displayName"),
-                      invite,
-                    },
-                  ),
+                const creating = !!invite || register;
+                const received = await api<ReaderSession>(
+                  invite ? "/activate" : register ? "/register" : "/login",
+                  "POST",
+                  {
+                    username: data.get("username"),
+                    password: data.get("password"),
+                    displayName: data.get("displayName"),
+                    invite,
+                  },
                 );
+                if (creating) {
+                  setInvite("");
+                  setRegister(false);
+                }
+                try {
+                  await enter(received);
+                } catch (error) {
+                  if (creating)
+                    throw Error(
+                      "Your account was created, but the reader could not open. Sign in to try again.",
+                    );
+                  throw error;
+                }
                 setInvite("");
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Please try again.");
@@ -366,7 +452,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
               }
             }}
           >
-            {invite && (
+            {(invite || register) && (
               <label>
                 Your name
                 <input
@@ -378,30 +464,44 @@ export default function AccountGate({ children }: { children: ReactNode }) {
               </label>
             )}
             <label>
-              Username
+              Username or email
               <input
                 name="username"
                 autoComplete="username"
                 autoCapitalize="none"
                 minLength={3}
-                maxLength={40}
+                maxLength={254}
                 required
               />
             </label>
-            <label>
-              Password
+            <label htmlFor="reader-password">Password</label>
+            <div className="password-field">
               <input
+                id="reader-password"
                 name="password"
-                type="password"
-                autoComplete={invite ? "new-password" : "current-password"}
+                type={showPassword ? "text" : "password"}
+                autoComplete={
+                  invite || register ? "new-password" : "current-password"
+                }
                 minLength={12}
                 maxLength={256}
                 required
               />
-            </label>
-            {invite && (
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? <EyeSlash size={22} /> : <Eye size={22} />}
+                <span>{showPassword ? "Hide" : "Show"}</span>
+              </button>
+            </div>
+            {(invite || register) && (
               <p className="account-hint">
-                Use at least 12 characters for your password.
+                Use at least 12 characters for your password. An email address
+                is used only to sign in; email recovery is not available yet.
               </p>
             )}
             {error && (
@@ -412,18 +512,48 @@ export default function AccountGate({ children }: { children: ReactNode }) {
             <button className="primary-button" disabled={busy}>
               {busy
                 ? "A moment…"
-                : invite
+                : invite || register
                   ? "Create my account"
                   : "Enter my library"}
               <ArrowRight />
             </button>
           </form>
         )}
-        <p className="account-hint">
-          {invite
-            ? "Your invitation is private and can be used once."
-            : "Access is by invitation. Ask the library owner for an account."}
-        </p>
+        <div className="account-options">
+          {!invite && !loading && (
+            <button
+              type="button"
+              className="text-button"
+              disabled={busy}
+              onClick={() => {
+                setRegister((v) => !v);
+                setError("");
+                setShowPassword(false);
+              }}
+            >
+              {register
+                ? "Already have an account? Sign in"
+                : "New here? Create an account"}
+            </button>
+          )}
+          <button
+            type="button"
+            className="guest-button"
+            disabled={busy}
+            onClick={() => void enterGuest()}
+          >
+            Continue as guest <ArrowRight />
+          </button>
+          <p className="account-hint">
+            Guests can read and listen. Create an account to save bookmarks,
+            notes, reading progress and offline books.
+          </p>
+          {invite && (
+            <p className="account-hint">
+              Your invitation is private and can be used once.
+            </p>
+          )}
+        </div>
       </section>
     </main>
   );

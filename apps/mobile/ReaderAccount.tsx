@@ -22,6 +22,7 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   readerClient,
+  readerDetailsError,
   ReaderApiError,
   ReaderNetworkError,
   ReaderSync,
@@ -45,7 +46,10 @@ async function revokePending() {
   }
 }
 type Scope = {
-  session: ReaderSession;
+  session: ReaderSession | null;
+  isGuest: boolean;
+  storageId: string;
+  requestAccount: () => void;
   api: ReturnType<typeof readerClient>;
   read: <T>(key: string, fallback: T) => Promise<T>;
   store: (key: string, value: unknown) => Promise<boolean>;
@@ -73,7 +77,9 @@ export default function ReaderAccountGate({
     [password, setPassword] = useState(""),
     [name, setName] = useState(""),
     [invite, setInvite] = useState(""),
-    [activate, setActivate] = useState(false);
+    [activate, setActivate] = useState(false),
+    [register, setRegister] = useState(false),
+    [showPassword, setShowPassword] = useState(false);
   const generation = useRef(0);
   const engine = useRef<ReaderSync | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,6 +193,9 @@ export default function ReaderAccountGate({
     setPassword("");
     setScope({
       session: s,
+      isGuest: false,
+      storageId: s.account.id,
+      requestAccount: () => {},
       api,
       read,
       store,
@@ -235,7 +244,7 @@ export default function ReaderAccountGate({
     }
   }
   useEffect(() => {
-    if (!scope) return;
+    if (!scope?.session) return;
     const verify = async () => {
       try {
         await scope.api("/me");
@@ -248,7 +257,7 @@ export default function ReaderAccountGate({
       () => {
         void scope.logout();
       },
-      Math.max(0, Date.parse(scope.session.expiresAt) - Date.now()),
+      Math.max(0, Date.parse(scope.session!.expiresAt) - Date.now()),
     );
     const poll = setInterval(() => {
       void verify();
@@ -299,6 +308,34 @@ export default function ReaderAccountGate({
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
+  function enterGuest() {
+    generation.current++;
+    engine.current?.close();
+    const values = new Map<string, unknown>(),
+      storageId = "guest-" + Date.now();
+    const leave = async () => {
+      setScope(null);
+    };
+    setSyncMessage("");
+    setScope({
+      session: null,
+      isGuest: true,
+      storageId,
+      requestAccount: () => void leave(),
+      api: (async () => {
+        throw new ReaderApiError("Sign in to save your reading.", 401);
+      }) as ReturnType<typeof readerClient>,
+      read: async <T,>(key: string, fallback: T) =>
+        (values.get(key) as T) ?? fallback,
+      store: async (key, value) => {
+        if (["marks", "notes", "outbox", "books"].includes(key)) return false;
+        values.set(key, value);
+        return true;
+      },
+      logout: leave,
+      keepLocalChanges: async () => {},
+    });
+  }
   if (scope)
     return (
       <Context.Provider value={{ ...scope, syncMessage }}>
@@ -319,7 +356,7 @@ export default function ReaderAccountGate({
         <Text style={styles.title}>
           {loading
             ? "Settling you in…"
-            : activate
+            : activate || register
               ? "Make yourself at home."
               : "Welcome back."}
         </Text>
@@ -341,6 +378,10 @@ export default function ReaderAccountGate({
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+              </>
+            )}
+            {(activate || register) && (
+              <>
                 <Text style={styles.label}>Your name</Text>
                 <TextInput
                   style={styles.input}
@@ -351,16 +392,16 @@ export default function ReaderAccountGate({
                 />
               </>
             )}
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.label}>Username or email</Text>
             <TextInput
-              accessibilityLabel="Username"
+              accessibilityLabel="Username or email"
               style={styles.input}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="username"
-              maxLength={40}
+              maxLength={254}
             />
             <Text style={styles.label}>Password</Text>
             <TextInput
@@ -368,14 +409,27 @@ export default function ReaderAccountGate({
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
-              autoComplete={activate ? "new-password" : "current-password"}
+              secureTextEntry={!showPassword}
+              autoComplete={
+                activate || register ? "new-password" : "current-password"
+              }
               maxLength={256}
             />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                showPassword ? "Hide password" : "Show password"
+              }
+              accessibilityState={{ selected: showPassword }}
+              onPress={() => setShowPassword((v) => !v)}
+            >
+              <Text style={styles.link}>
+                {showPassword ? "Hide password" : "Show password"}
+              </Text>
+            </Pressable>
             <Text style={styles.hint}>
-              {activate
-                ? "Use at least 12 characters."
-                : "Access is by invitation from the library owner."}
+              Use at least 12 characters. An email is used only to sign in;
+              email recovery is not available yet.
             </Text>
             {!!error && (
               <Text accessibilityRole="alert" style={styles.error}>
@@ -387,20 +441,44 @@ export default function ReaderAccountGate({
               disabled={busy}
               style={styles.primary}
               onPress={async () => {
-                setBusy(true);
                 setError("");
+                const invalid = readerDetailsError(
+                  username,
+                  password,
+                  activate || register ? name : undefined,
+                );
+                if (invalid) {
+                  setError(invalid);
+                  return;
+                }
+                setBusy(true);
                 try {
                   await revokePending();
                   let code = invite.trim();
                   if (code.includes("#invite="))
                     code = code.split("#invite=")[1];
-                  await enter(
-                    await readerClient(BASE)<ReaderSession & { token: string }>(
-                      activate ? "/activate" : "/login",
-                      "POST",
-                      { username, password, displayName: name, invite: code },
-                    ),
+                  const creating = activate || register;
+                  const received = await readerClient(BASE)<
+                    ReaderSession & { token: string }
+                  >(
+                    activate ? "/activate" : register ? "/register" : "/login",
+                    "POST",
+                    { username, password, displayName: name, invite: code },
                   );
+                  if (creating) {
+                    setActivate(false);
+                    setRegister(false);
+                    setInvite("");
+                  }
+                  try {
+                    await enter(received);
+                  } catch (error) {
+                    if (creating)
+                      throw Error(
+                        "Your account was created, but the reader could not open. Sign in to try again.",
+                      );
+                    throw error;
+                  }
                   setInvite("");
                 } catch (e) {
                   setError((e as Error).message);
@@ -412,15 +490,32 @@ export default function ReaderAccountGate({
               <Text style={styles.primaryText}>
                 {busy
                   ? "A moment…"
-                  : activate
+                  : activate || register
                     ? "Create my account"
                     : "Enter my library →"}
               </Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              disabled={busy}
+              onPress={() => {
+                setRegister(!register);
+                setActivate(false);
+                setError("");
+              }}
+            >
+              <Text style={styles.link}>
+                {register
+                  ? "Already have an account? Sign in"
+                  : "New here? Create an account"}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
               onPress={() => {
                 setActivate(!activate);
+                setRegister(false);
                 setError("");
               }}
             >
@@ -428,6 +523,17 @@ export default function ReaderAccountGate({
                 {activate ? "I already have an account" : "Have an invitation?"}
               </Text>
             </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={enterGuest}
+            >
+              <Text style={styles.link}>Continue as guest →</Text>
+            </Pressable>
+            <Text style={styles.hint}>
+              Guests can read and listen. An account saves bookmarks, notes and
+              reading progress. Importing your own books requires an account.
+            </Text>
           </>
         )}
       </ScrollView>

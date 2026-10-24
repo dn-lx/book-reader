@@ -208,3 +208,5 @@ export function validateBook(value: unknown): Book {
 export * from "./reader-account";
 
 export * from "./reading";
+
+export * from "./account-details";

@@ -26,7 +26,7 @@ export async function proxyReader(
       .replace(/^\/api\/reader/, "")
       .replace(/^\/\.netlify\/functions\/reader/, "");
   if (
-    !/^\/(?:me|login|activate|logout|state|admin\/(?:accounts(?:\/[a-f0-9-]{36})?|invites))$/.test(
+    !/^\/(?:me|login|register|activate|logout|state|admin\/(?:accounts(?:\/[a-f0-9-]{36})?|invites))$/.test(
       route,
     )
   )
@@ -67,7 +67,10 @@ export async function proxyReader(
       ...privateHeaders,
       "Content-Type": "application/json",
     });
-    if (response.ok && (route === "/login" || route === "/activate")) {
+    if (
+      response.ok &&
+      (route === "/login" || route === "/activate" || route === "/register")
+    ) {
       if (!/^[a-f0-9]{64}$/.test(data.token))
         throw new Error("Invalid session");
       out.set(
@@ -97,7 +100,13 @@ export async function proxyReader(
 export async function authorizeMedia(
   request: Request,
   send: typeof fetch = fetch,
+  guestPaths: readonly string[] = [],
 ) {
+  if (
+    ["GET", "HEAD"].includes(request.method) &&
+    guestPaths.includes(new URL(request.url).pathname)
+  )
+    return true;
   const session = cookieToken(request);
   if (!session) return false;
   try {

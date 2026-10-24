@@ -21,8 +21,9 @@ export default function AccountPanel() {
       setAccounts(x.accounts),
     );
   useEffect(() => {
-    if (account.role === "admin") load().catch((e) => setError(e.message));
-  }, [account.role]);
+    if (account?.role === "admin") load().catch((e) => setError(e.message));
+  }, [account?.role]);
+  if (!account) return null;
   return (
     <div className="account-settings">
       {syncMessage && (
@@ -48,7 +49,7 @@ export default function AccountPanel() {
         Your bookmarks, notes and reading place belong to your account. Imported
         book files stay on this device.
       </p>
-      {account.role === "admin" && (
+      {account?.role === "admin" && (
         <>
           <h3>Library access</h3>
           <p className="quiet-note">

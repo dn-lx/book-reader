@@ -173,7 +173,8 @@ function AudioBars({ playing }: { playing: boolean }) {
   );
 }
 export default function ReaderApp() {
-  const { account, storage, logout, syncMessage } = useAccount();
+  const { account, isGuest, requestAccount, storage, logout, syncMessage } =
+    useAccount();
   const {
     readSaved,
     writeSaved,
@@ -275,7 +276,7 @@ export default function ReaderApp() {
     if (matchMedia("(display-mode: standalone)").matches) setInstalled(true);
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js").catch(() => {});
-    if ("caches" in window)
+    if (!isGuest && "caches" in window)
       caches.open(cacheName).then(async (cache) => {
         const keys = await cache.keys();
         setOfflineIds([
@@ -307,6 +308,10 @@ export default function ReaderApp() {
   );
   const addMark = useCallback(
     (location?: Partial<Bookmark>) => {
+      if (isGuest) {
+        setModal("join");
+        return;
+      }
       if (!p.book) return;
       const ch = p.book.chapters[p.chapter],
         seg = ch.segments[segmentAt(ch.segments, p.time)];
@@ -354,6 +359,10 @@ export default function ReaderApp() {
     return () => document.removeEventListener("keydown", onKey);
   }, [reading, p.book, p.toggle, p.skip, addMark]);
   async function offline(b: Book) {
+    if (isGuest) {
+      setModal("join");
+      return;
+    }
     if (b.local) {
       notify("Imported books are already saved on this device.");
       return;
@@ -586,7 +595,7 @@ export default function ReaderApp() {
           className="nav-item"
           onClick={() => {
             setDrawer(false);
-            setModal("notes");
+            setModal(isGuest ? "join" : "notes");
           }}
         >
           <TextAa />
@@ -596,11 +605,12 @@ export default function ReaderApp() {
           className="nav-item"
           onClick={() => {
             setDrawer(false);
-            setModal("account");
+            if (isGuest) requestAccount();
+            else setModal("account");
           }}
         >
           <Leaf />
-          {account.displayName}
+          {account?.displayName || "Guest reader · Sign in"}
         </button>
         {syncMessage && (
           <p className="quiet-note" role="status">
@@ -610,14 +620,15 @@ export default function ReaderApp() {
         <button
           className="install-link"
           onClick={() => {
-            void logout();
+            if (isGuest) requestAccount();
+            else void logout();
           }}
         >
-          Sign out
+          {isGuest ? "Sign in or create an account" : "Sign out"}
         </button>
         <button
           className="nav-item add-book"
-          onClick={() => setModal("import")}
+          onClick={() => setModal(isGuest ? "join" : "import")}
         >
           <Plus />
           Add a book
@@ -647,12 +658,27 @@ export default function ReaderApp() {
   );
   return (
     <MotionConfig reducedMotion="user">
-      {modal === "account" && (
+      {modal === "join" && (
+        <Modal title="Keep your place" onClose={() => setModal("")}>
+          <p>
+            Guests can read and listen. Sign in or create an account to save
+            bookmarks, notes, reading progress and offline books.
+          </p>
+          <button className="primary-button" onClick={requestAccount}>
+            Sign in or create an account <ArrowRight />
+          </button>
+          <p className="quiet-note">
+            Your guest reading place lasts only for this visit. Sign in to add
+            your own books.
+          </p>
+        </Modal>
+      )}
+      {modal === "account" && !isGuest && (
         <Modal title="Your reading account" onClose={() => setModal("")}>
           <AccountPanel />
         </Modal>
       )}
-      {modal === "notes" && (
+      {modal === "notes" && !isGuest && (
         <Modal
           title="Your notes"
           onClose={() => {
@@ -876,6 +902,10 @@ export default function ReaderApp() {
                   theme={theme}
                   onTheme={setTheme}
                   onAnnotate={(draft, kind) => {
+                    if (isGuest) {
+                      setModal("join");
+                      return;
+                    }
                     if (kind === "note") {
                       setNoteDraft(draft);
                       setEditingNote(null);
@@ -903,6 +933,7 @@ export default function ReaderApp() {
                   }}
                   offline={() => offline(p.book!)}
                   offlineLabel={
+                    (isGuest ? "Sign in to save offline" : "") ||
                     offlineBusy ||
                     (offlineIds.includes(p.book.id)
                       ? "Remove offline copy"
@@ -964,7 +995,7 @@ export default function ReaderApp() {
                   </div>
                   <button
                     className="text-button"
-                    onClick={() => setModal("import")}
+                    onClick={() => setModal(isGuest ? "join" : "import")}
                   >
                     <Plus size={17} />
                     Add a book
@@ -1119,7 +1150,7 @@ export default function ReaderApp() {
                     </p>
                     <button
                       className="primary-button"
-                      onClick={() => setModal("import")}
+                      onClick={() => setModal(isGuest ? "join" : "import")}
                     >
                       <Plus />
                       Add your first book
@@ -1157,7 +1188,7 @@ export default function ReaderApp() {
             </motion.div>
           )}
         </AnimatePresence>
-        {modal === "import" && (
+        {modal === "import" && !isGuest && (
           <ImportModal
             onClose={() => setModal("")}
             onAdded={(b) => {

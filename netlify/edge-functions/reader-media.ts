@@ -1,9 +1,10 @@
+import guestPaths from "../../.generated/guest-media.json" with { type: "json" };
 import { authorizeMedia, privateHeaders } from "../../server/web-boundary.ts";
 export default async (
   request: Request,
   context: { next: () => Promise<Response> },
 ) => {
-  if (!(await authorizeMedia(request)))
+  if (!(await authorizeMedia(request, fetch, guestPaths)))
     return new Response("Please sign in to read this book.", {
       status: 401,
       headers: privateHeaders,

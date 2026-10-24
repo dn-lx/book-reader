@@ -22,3 +22,10 @@ if (!existsSync(generated))
   );
 
 await import("./build-pdf-viewer.mjs");
+
+const { guestLibraryPaths } = await import("./guest-library.mjs");
+mkdirSync(join(root, ".generated"), { recursive: true });
+writeFileSync(
+  join(root, ".generated/guest-media.json"),
+  JSON.stringify(await guestLibraryPaths(pub)),
+);

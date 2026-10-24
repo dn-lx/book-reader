@@ -2,6 +2,14 @@
 
 Accepted scope: Next.js website and Expo React Native app, based on Agent Project Starter. Updated 2026-10-24.
 
+## [ ] REQ-011 — Guest reading and reliable account creation
+- Guests can read/listen without an account. They cannot save bookmarks, notes, highlights, reading places or offline copies; guest state cannot expose or become another account's data.
+- Readers can create their own account. Usernames and email addresses are accepted consistently by web, native, API and database; admin privileges still require a private invitation.
+- Sign-in and account-creation fields offer accessible show/hide password controls and clear format/length validation.
+- Guest media access is limited to the packaged shared catalog. Personal data and unlisted media remain protected at the server boundary.
+- Acceptance: independent security review, positive/negative API/database tests, desktop/mobile rendered flows and inspected screenshots, account isolation, web/native types and exports, current develop deployment and hosted checks.
+- Plan: docs/plans/REQ-011-guest-accounts.md.
+
 ## [x] REQ-001 — Complete Manifest read-along
 - All 19 narration chapters and all PDF pages are available from beginning to end.
 - Timed passages highlight as audio plays. Original PDF follows passage page cues.

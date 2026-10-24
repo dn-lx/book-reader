@@ -3,7 +3,9 @@ import { createContext, useContext } from "react";
 import type { ReaderAccount } from "@pagechime/core";
 import type { ReaderStorage } from "./storage";
 export const AccountContext = createContext<{
-  account: ReaderAccount;
+  account: ReaderAccount | null;
+  isGuest: boolean;
+  requestAccount: () => void;
   storage: ReaderStorage;
   logout: () => Promise<void>;
   syncMessage: string;

@@ -72,6 +72,25 @@ export function createReaderStorage(
     cacheName: "leaf-books-account-" + account,
   };
 }
+/** Guest state lasts only while this reader instance is open. Never touches disk. */
+export function createGuestStorage(): ReaderStorage {
+  const values = new Map<string, unknown>();
+  return {
+    readSaved: <T>(key: string, fallback: T): T =>
+      (values.get(key) as T) ?? fallback,
+    writeSaved: (key, value) => {
+      if (["bookmarks", "notes", "outbox"].includes(key)) return false;
+      values.set(key, value);
+      return true;
+    },
+    getLocalBooks: async () => [],
+    putLocalBook: async () => {
+      throw Error("Sign in to add your own books.");
+    },
+    deleteLocalBook: async () => undefined,
+    cacheName: "guest-no-cache",
+  };
+}
 export type ReaderStorage = ReturnType<typeof createReaderStorage>;
 export function materialize(record: StoredBook): Book {
   return {

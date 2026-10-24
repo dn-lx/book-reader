@@ -87,4 +87,5 @@ Run `node scripts/validate-docs.mjs` to check documentation structure/references
 - `docs/PAGECHIME-VERIFICATION.md` — application verification evidence and limits.
 - `docs/SECURITY-REVIEW.md` — reviewed runtime boundaries and the tracked Expo tooling advisory.
 
+- `docs/REQ-011-VERIFICATION.md` — guest/member, email signup, password reveal and security evidence.
 - `docs/READER-ACCOUNTS.md` — standalone Me+ accounts, first admin, Netlify setup and verification.

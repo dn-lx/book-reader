@@ -1,3 +1,7 @@
+import {
+  normalizeReaderUsername,
+  readerDetailsError,
+} from "../packages/core/src/account-details.ts";
 /** This module runs only on the server. No dependency on Supabase Auth. */
 export interface Database {
   read<T = Record<string, unknown>>(
@@ -71,6 +75,11 @@ const clean = (a: Account) => ({
   displayName: a.display_name,
   role: a.role,
 });
+export class DatabaseFailure extends Error {
+  constructor(public code: string) {
+    super("Database request failed");
+  }
+}
 class Failure extends Error {
   constructor(
     public status: number,
@@ -110,7 +119,12 @@ export function restDatabase(url: string, secret: string): Database {
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(12000),
     });
-    if (!response.ok) throw new Error("Database request failed");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new DatabaseFailure(
+        typeof error.code === "string" ? error.code : "unknown",
+      );
+    }
     return response.status === 204 ||
       response.headers.get("content-length") === "0"
       ? null
@@ -170,7 +184,7 @@ export function restDatabase(url: string, secret: string): Database {
   };
 }
 export function createReaderApi(db: Database, pepper: string) {
-  async function rate(ip: string, username: string) {
+  async function rate(ip: string, username: string, registration = false) {
     const key = await crypto.subtle.importKey(
       "raw",
       encoder.encode(pepper),
@@ -178,11 +192,14 @@ export function createReaderApi(db: Database, pepper: string) {
       false,
       ["sign"],
     );
-    for (const [s, limit] of [
+    const scopes: Array<readonly [string, number]> = [
       ["global", 1000],
       [`ip:${ip}`, 60],
       [`user:${username}`, 10],
-    ] as const) {
+    ];
+    if (registration)
+      scopes.push(["register:global", 100], [`register:ip:${ip}`, 5]);
+    for (const [s, limit] of scopes) {
       const hashed = hex(
         await crypto.subtle.sign("HMAC", key, encoder.encode(s)),
       );
@@ -237,7 +254,7 @@ export function createReaderApi(db: Database, pepper: string) {
           .replace(/^\/api\/reader/, "") || "/me";
       if (req.method === "OPTIONS") return new Response(null, { status: 405 }); // Native has no CORS; web uses its same-origin BFF.
       if (
-        (path === "/login" || path === "/activate") &&
+        (path === "/login" || path === "/activate" || path === "/register") &&
         req.method === "POST"
       ) {
         const raw = await req.text();
@@ -245,14 +262,35 @@ export function createReaderApi(db: Database, pepper: string) {
         const b = JSON.parse(raw);
         if (!b || typeof b !== "object" || Array.isArray(b))
           return fail(400, "Invalid request.");
-        const username = text(b.username, 40).trim().toLowerCase(),
+        const username = normalizeReaderUsername(text(b.username, 254)),
           password = text(b.password, 256);
-        await rate(ip, username);
-        if (
-          !/^[a-z0-9][a-z0-9_.-]{2,39}$/.test(username) ||
-          password.length < 12
-        )
-          return fail(401, "The username or password could not be accepted.");
+        await rate(ip, username, path === "/register");
+        const name =
+          path === "/login" ? undefined : text(b.displayName, 80).trim();
+        const detailsError = readerDetailsError(username, password, name);
+        if (detailsError) return fail(400, detailsError);
+        if (path === "/register") {
+          const a: Account = {
+            id: crypto.randomUUID(),
+            username,
+            display_name: name!,
+            role: "reader",
+            active: true,
+            session_version: 0,
+            password_hash: await passwordHash(password),
+          };
+          try {
+            await db.insert("book_reader_accounts", a);
+          } catch (error) {
+            if (error instanceof DatabaseFailure && error.code === "23505")
+              return fail(
+                409,
+                "This username or email is already in use. Try signing in, or choose another.",
+              );
+            throw error;
+          }
+          return session(a);
+        }
         if (path === "/activate") {
           const invite = text(b.invite, 64),
             name = text(b.displayName, 80).trim();

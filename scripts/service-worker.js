@@ -81,8 +81,7 @@ self.addEventListener("fetch", (event) => {
       const privateFile =
         url.pathname.startsWith("/books/") || url.pathname === "/library.json";
       const account = (await readScope(event.clientId))?.account;
-      if (privateFile && !account)
-        return new Response("Please sign in.", { status: 401 });
+      if (privateFile && !account) return fetch(event.request); // Guests never read or populate account caches.
       const bookCache = account
         ? await caches.open("leaf-books-account-" + account)
         : null;

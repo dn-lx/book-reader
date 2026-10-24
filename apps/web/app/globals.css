@@ -3248,3 +3248,58 @@ progress::-webkit-progress-value {
     transition: none;
   }
 }
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.account-panel .password-field input {
+  width: 100%;
+  padding-right: 100px;
+}
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 10px;
+  color: var(--ink, #292e24);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.password-toggle:focus-visible {
+  outline: 2px solid #65704f;
+  outline-offset: 1px;
+}
+.account-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.account-options .text-button {
+  border: 0;
+  padding: 10px;
+  background: transparent;
+  color: #52613e;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.guest-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 14px;
+  border: 1px solid #b6bba9;
+  border-radius: 10px;
+  background: transparent;
+  color: #292e24;
+  cursor: pointer;
+}

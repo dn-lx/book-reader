@@ -1,5 +1,6 @@
 import {
   type Database,
+  DatabaseFailure,
   passwordHash,
   type Account,
 } from "../../server/reader-api";
@@ -26,6 +27,11 @@ export class MemoryDatabase implements Database {
     ) as T[];
   }
   async insert(t: string, v: Record<string, unknown>) {
+    if (
+      t === "book_reader_accounts" &&
+      this.table(t).some((row) => row.username === v.username)
+    )
+      throw new DatabaseFailure("23505");
     this.table(t).push(structuredClone(v));
   }
   async update(

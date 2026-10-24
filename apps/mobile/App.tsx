@@ -128,8 +128,18 @@ export default function App() {
   );
 }
 function PagechimeApp() {
-  const { session, read, store, api, logout, syncMessage, keepLocalChanges } =
-    useReaderAccount();
+  const {
+    session,
+    isGuest,
+    storageId,
+    requestAccount,
+    read,
+    store,
+    api,
+    logout,
+    syncMessage,
+    keepLocalChanges,
+  } = useReaderAccount();
   const [notes, setNotes] = useState<ReaderNote[]>([]),
     [noteText, setNoteText] = useState(""),
     [editingNote, setEditingNote] = useState<ReaderNote | null>(null);
@@ -421,6 +431,10 @@ function PagechimeApp() {
       .catch(() => setLoadError("The audio is still loading."));
   }
   function bookmark() {
+    if (isGuest) {
+      setSheet("join");
+      return;
+    }
     if (!entry || !ch) return;
     const readingAnchor =
       mode === "text" ? readingAnchors.current[entry.book.id] : undefined;
@@ -555,7 +569,7 @@ function PagechimeApp() {
             icon="plus"
             label="Add a book"
             styles={s}
-            onPress={() => setSheet("import")}
+            onPress={() => setSheet(isGuest ? "join" : "import")}
           />
         </View>
       </View>
@@ -710,7 +724,7 @@ function PagechimeApp() {
                                   setBooks(next);
                                   await FS.deleteAsync(
                                     FS.documentDirectory +
-                                      `reader-${session.account.id}/books/` +
+                                      `reader-${storageId}/books/` +
                                       b.id +
                                       "/",
                                     { idempotent: true },
@@ -742,7 +756,10 @@ function PagechimeApp() {
               <Text style={s.description}>
                 Add a PDF and its narration to begin.
               </Text>
-              <Pressable style={s.primary} onPress={() => setSheet("import")}>
+              <Pressable
+                style={s.primary}
+                onPress={() => setSheet(isGuest ? "join" : "import")}
+              >
                 <Text style={s.primaryText}>Add your first book</Text>
               </Pressable>
             </View>
@@ -870,11 +887,15 @@ function PagechimeApp() {
                   });
                 }}
                 onAnnotate={(draft, kind) => {
+                  if (isGuest) {
+                    setSheet("join");
+                    return;
+                  }
                   if (kind === "note") {
                     setNoteDraft(draft);
                     setNoteText("");
                     setEditingNote(null);
-                    setSheet("notes");
+                    setSheet(isGuest ? "join" : "notes");
                     return;
                   }
                   const highlight: ReaderNote = {
@@ -1389,10 +1410,26 @@ function PagechimeApp() {
                 ))}
               </ScrollView>
             )}
-            {sheet === "account" && (
+            {(sheet === "join" || (sheet === "account" && isGuest)) && (
+              <View>
+                <Text style={s.sheetTitle}>Keep your place</Text>
+                <Text style={s.description}>
+                  Guests can read and listen. Sign in or create an account to
+                  save bookmarks, notes and reading progress. Your guest reading
+                  place lasts only for this visit. Importing your own books
+                  requires an account.
+                </Text>
+                <Pressable style={s.primary} onPress={requestAccount}>
+                  <Text style={s.primaryText}>
+                    Sign in or create an account
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+            {sheet === "account" && session && (
               <ScrollView>
                 <Text style={s.sheetTitle}>{session.account.displayName}</Text>
-                <Pressable onPress={() => setSheet("notes")}>
+                <Pressable onPress={() => setSheet(isGuest ? "join" : "notes")}>
                   <Text style={[s.muted, { paddingVertical: 15 }]}>
                     My notes →
                   </Text>
@@ -1434,10 +1471,10 @@ function PagechimeApp() {
                 </Pressable>
               </ScrollView>
             )}
-            {sheet === "import" && (
+            {sheet === "import" && !isGuest && (
               <ImportBook
                 styles={s}
-                accountId={session.account.id}
+                accountId={storageId}
                 onAdded={async (e) => {
                   const next = [...books, e];
                   if (

@@ -14,8 +14,23 @@ import {
 } from "../tests/fixtures/reader-database.ts";
 const db = await fixtureDatabase();
 const handler = createReaderApi(db, "fixture-pepper");
-const send: typeof fetch = async (input, init) =>
-  handler(new Request(input as string, init), "fixture-ip");
+const failInitialSync = new Set<string>();
+const send: typeof fetch = async (input, init) => {
+  const request = new Request(input as string, init);
+  const account = db
+    .table("book_reader_accounts")
+    .find((a) => a.id === request.headers.get("x-reader-account"));
+  if (
+    new URL(request.url).pathname.endsWith("/state") &&
+    account &&
+    failInitialSync.delete(account.username)
+  )
+    return new Response(JSON.stringify({ error: "Fixture state outage" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
+  return handler(request, "fixture-ip");
+};
 const fixtureHash = db.table("book_reader_accounts")[0].password_hash;
 const root = resolve("apps/web/out");
 const types: Record<string, string> = {
@@ -49,6 +64,12 @@ http
         headers,
         body: raw.length ? raw : undefined,
       });
+      if (path === "/__test/fail-initial-sync" && req.method === "POST") {
+        failInitialSync.add(JSON.parse(raw.toString()).username);
+        res.writeHead(204);
+        res.end();
+        return;
+      }
       if (path === "/__test/account" && req.method === "POST") {
         const id = crypto.randomUUID(),
           username = "test-" + id.slice(0, 14);
@@ -73,7 +94,13 @@ http
       }
       if (
         (path === "/library.json" || path.startsWith("/books/")) &&
-        !(await authorizeMedia(request, send))
+        !(await authorizeMedia(request, send, [
+          "/library.json",
+          "/books/demo/book.json",
+          "/books/demo/book.pdf",
+          "/books/demo/1.wav",
+          "/books/demo/2.wav",
+        ]))
       ) {
         res.writeHead(401, { "Cache-Control": "no-store" });
         res.end("Please sign in.");

@@ -436,3 +436,144 @@ test("optional reading and quotation metadata reject malformed synced values and
     200,
   );
 });
+
+test("email identifiers register as readers, normalize at login, and cannot self-promote", async () => {
+  const { call, db } = await setup();
+  const response = await call("/register", "POST", {
+    username: "  Reader+one@Example.com  ",
+    password: testPassword,
+    displayName: "A reader",
+    role: "admin",
+    active: true,
+  });
+  assert.equal(response.status, 200);
+  const session = await response.json();
+  assert.equal(session.account.username, "reader+one@example.com");
+  assert.equal(session.account.role, "reader");
+  assert.equal(
+    (await call("/admin/accounts", "GET", undefined, session.token)).status,
+    403,
+  );
+  assert.equal(
+    (
+      await call("/login", "POST", {
+        username: "READER+ONE@EXAMPLE.COM",
+        password: testPassword,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await call("/register", "POST", {
+        username: "reader+one@example.com",
+        password: testPassword,
+        displayName: "Duplicate",
+      })
+    ).status,
+    409,
+  );
+  const account = db
+    .table("book_reader_accounts")
+    .find((a) => a.id === session.account.id)!;
+  assert(!account.password_hash.includes(testPassword));
+  assert.equal((await call("/state")).status, 401);
+});
+test("account creation gives specific validation and rate-limits rotating identities", async () => {
+  const { call, db } = await setup();
+  for (const [username, password, displayName, match] of [
+    ["bad@", testPassword, "Reader", /email address/],
+    ["valid@example.com", "short", "Reader", /12–256/],
+    ["valid@example.com", testPassword, "", /your name/],
+  ]) {
+    const response = await call("/register", "POST", {
+      username,
+      password,
+      displayName,
+    });
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, match as RegExp);
+  }
+  let response: Response;
+  for (let i = 0; i < 6; i++)
+    response = await call("/register", "POST", {
+      username: `new${i}@example.com`,
+      password: "short",
+      displayName: "Reader",
+    });
+  assert.equal(response!.status, 429);
+  assert.equal(db.table("book_reader_accounts").length, 3);
+});
+test("email owner invitation remains atomic and can sign in after activation", async () => {
+  const { call, db } = await setup(),
+    invite = token();
+  await db.insert("book_reader_invites", {
+    token_hash: await digest(invite),
+    role: "admin",
+    expires_at: new Date(Date.now() + 60000).toISOString(),
+  });
+  const response = await call("/activate", "POST", {
+    username: "owner@example.com",
+    password: testPassword,
+    displayName: "Owner",
+    invite,
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).account.role, "admin");
+  assert.equal(
+    (
+      await call("/activate", "POST", {
+        username: "other@example.com",
+        password: testPassword,
+        displayName: "Other",
+        invite,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await call("/login", "POST", {
+        username: "owner@example.com",
+        password: testPassword,
+      })
+    ).status,
+    200,
+  );
+});
+test("guest media allowlist is exact and read-only; personal API remains protected", async () => {
+  const allow = ["/library.json", "/books/demo/book.pdf"];
+  const send = async () => {
+    throw Error("Guest paths must not call account service");
+  };
+  for (const path of allow)
+    assert(
+      await authorizeMedia(
+        new Request("https://reader.test" + path),
+        send,
+        allow,
+      ),
+    );
+  for (const path of [
+    "/books/private/book.pdf",
+    "/books/demo/%62ook.pdf",
+    "/books/demo/book.pdf/",
+    "/api/reader/state",
+  ])
+    assert.equal(
+      await authorizeMedia(
+        new Request("https://reader.test" + path),
+        send,
+        allow,
+      ),
+      false,
+    );
+  assert.equal(
+    await authorizeMedia(
+      new Request("https://reader.test/library.json", { method: "POST" }),
+      send,
+      allow,
+    ),
+    false,
+  );
+});

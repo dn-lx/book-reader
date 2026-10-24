@@ -6,7 +6,7 @@ async function user(page: Page) {
 }
 async function signIn(page: Page, u: { username: string; password: string }) {
   await page.goto("/");
-  await page.getByLabel("Username", { exact: true }).fill(u.username);
+  await page.getByLabel("Username or email", { exact: true }).fill(u.username);
   await page.getByLabel("Password", { exact: true }).fill(u.password);
   await page.getByRole("button", { name: "Enter my library" }).click();
   await expect(
@@ -39,7 +39,7 @@ async function logout(page: Page) {
     page.getByRole("button", { name: "Enter my library", exact: true }),
   ).toBeEnabled();
 }
-test("invitation-only sign-in is accessible and book files reject anonymous requests", async ({
+test("sign-in is accessible and only shared catalog files allow guests", async ({
   page,
 }, info) => {
   await page.goto("/");
@@ -52,7 +52,11 @@ test("invitation-only sign-in is accessible and book files reject anonymous requ
     "/books/demo/book.pdf",
     "/books/demo/1.wav",
   ])
-    expect((await page.request.get(url)).status()).toBe(401);
+    expect((await page.request.get(url)).status()).toBe(200);
+  expect((await page.request.get("/books/unlisted/book.pdf")).status()).toBe(
+    401,
+  );
+  expect((await page.request.get("/api/reader/state")).status()).toBe(401);
   expect(
     (
       await new AxeBuilder({ page })
@@ -205,6 +209,11 @@ test("offline outbox survives reload, restarts workers, and logout clears other 
   ).toBeVisible();
   expect(
     await second.evaluate(async () => (await fetch("/library.json")).status),
+  ).toBe(200);
+  expect(
+    await second.evaluate(
+      async () => (await fetch("/api/reader/state")).status,
+    ),
   ).toBe(401);
   await cdp.detach();
 });
@@ -253,4 +262,180 @@ test("failed logout keeps the reader closed until server revocation can retry", 
   await expect(page.locator(".app-shell")).toHaveCount(0);
   await page.unroute("**/api/reader/logout");
   await signIn(page, alice);
+});
+
+test("guest reading has no personal saves, account requests or persistent progress", async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  let personalRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/reader/state")) personalRequests++;
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await expect(
+    page.getByRole("heading", { name: "A Quiet Beginning", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Open book", exact: true }).click();
+  await page.getByRole("button", { name: "Bookmark this moment" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Keep your place" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await page
+    .getByRole("button", { name: "Sign in to save offline", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Keep your place" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await menu(page);
+  await page.getByRole("button", { name: "Add a book", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Keep your place" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  const closeMenu = page.getByRole("button", {
+    name: "Close library menu",
+    exact: true,
+  });
+  if (await closeMenu.isVisible()) await closeMenu.click();
+  expect(errors).toEqual([]);
+  expect(personalRequests).toBe(0);
+  expect(
+    await page.evaluate(() =>
+      Object.keys(localStorage).filter((k) => k.startsWith("leaf.account.")),
+    ),
+  ).toEqual([]);
+  expect(
+    await page.evaluate(async () =>
+      (await caches.keys()).filter(
+        (k) => k.includes("books-account") || k === "guest-no-cache",
+      ),
+    ),
+  ).toEqual([]);
+  await page.screenshot({
+    path: info.outputPath("guest-reader.png"),
+    fullPage: true,
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back." }),
+  ).toBeVisible();
+});
+
+test("email signup and password reveal create an account that can sign in again", async ({
+  page,
+}, info) => {
+  const errors: string[] = [],
+    failedRequests: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("requestfailed", (request) => {
+    if (/\/api\/reader\/|\/library.json/.test(request.url()))
+      failedRequests.push(request.url());
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "New here? Create an account" })
+    .click();
+  await page.getByLabel("Your name", { exact: true }).fill("A new reader");
+  const email = `reader-${Date.now()}-${info.project.name}@example.com`;
+  await page.getByLabel("Username or email", { exact: true }).fill(email);
+  const password = page.getByLabel("Password", { exact: true });
+  await password.fill("A long test password, for reading.");
+  await expect(password).toHaveAttribute("type", "password");
+  await page
+    .getByRole("button", { name: "Show password", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "text");
+  await expect(password).toHaveValue("A long test password, for reading.");
+  await page.screenshot({
+    path: info.outputPath("create-account-password-visible.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Hide password", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "password");
+  const a11y = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(a11y.violations).toEqual([]);
+  await page
+    .getByRole("button", { name: "Create my account", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "A Quiet Beginning", exact: true }),
+  ).toBeVisible();
+  await logout(page);
+  await signIn(page, {
+    username: email.toUpperCase(),
+    password: "A long test password, for reading.",
+  });
+  await page.getByRole("button", { name: "Open book", exact: true }).click();
+  await notes(page);
+  await page
+    .getByLabel("Your note", { exact: true })
+    .fill("My first account note.");
+  await page.getByRole("button", { name: "Save note", exact: true }).click();
+  await expect(page.locator(".note-card")).toContainText(
+    "My first account note.",
+  );
+  expect(errors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
+test("guest entry waits for confirmed sign-out cleanup", async ({ page }) => {
+  const alice = await user(page);
+  await signIn(page, alice);
+  await page.route("**/api/reader/logout", (route) =>
+    route.fulfill({ status: 503, json: { error: "Unavailable" } }),
+  );
+  await logout(page);
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await expect(page.locator(".account-error")).toContainText(
+    "sign-out cleanup did not finish",
+  );
+  await expect(page.locator(".app-shell")).toHaveCount(0);
+  await page.unroute("**/api/reader/logout");
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await expect(
+    page.getByRole("heading", { name: "A Quiet Beginning", exact: true }),
+  ).toBeVisible();
+  expect((await page.request.get("/api/reader/me")).status()).toBe(401);
+});
+
+test("created accounts recover through sign-in after an initial sync failure", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "New here? Create an account" })
+    .click();
+  await page.getByLabel("Your name", { exact: true }).fill("A reader");
+  const email = `recover-${Date.now()}-${info.project.name}@example.com`;
+  await page.getByLabel("Username or email", { exact: true }).fill(email);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("A long recovery test password.");
+  await page.request.post("/__test/fail-initial-sync", {
+    data: { username: email },
+  });
+  await page
+    .getByRole("button", { name: "Create my account", exact: true })
+    .click();
+  await expect(page.locator(".account-error")).toContainText(
+    "Your account was created",
+  );
+  await expect(
+    page.getByRole("button", { name: "Enter my library", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Enter my library", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "A Quiet Beginning", exact: true }),
+  ).toBeVisible();
 });
