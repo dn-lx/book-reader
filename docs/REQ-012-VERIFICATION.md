@@ -23,3 +23,9 @@ Independent reviewer /root/guest_security_review completed read-only sensitive-p
 Neural2 offline preflight only: British female en-GB-Neural2-A/.95,233,050 billable characters,1,149 bounded requests,$3.7288 conservative full estimate before quota;110-word audition$0.0094. No credentials/API synthesis, billed requests or actual Google tone audition are claimed. Owner needs a new Google Cloud project/billing/sign-in. British emotion controls unsupported by the documented Neural2 styles are not sent.
 
 Next/Expo exports are not physical-device or signed-app acceptance. Existing Netlify team gate blocks unauthenticated inner hosted UI; local browser and live capability/backend results do not claim hosted member login/media routing. Keep remaining runtime criteria open.
+
+## Source publication and hosted blocker
+
+Develop source99992b6cae14f0eeed5c7f52d356ca8875023e69 passes all five GitHub suites (Application40077190791; Security40077190777; reliability40077190810; stack40077190793; version40077190778). Netlify branch-deploy6adc68a6b6aa5a0945c70a3c failed while building, exit2; previous develop deploy stays live. The private build log requires dashboard sign-in and the secure browser sign-in was declined. Connector variable writes report success but getter returns[]; do not claim this is proven as the cause without the log. No main changes. Resume access/diagnosis without weakening private-source or security checks.
+
+Google Cloud new-project console navigation returned Site Unavailable in the cloud browser. No project was created; no credentials or billing were changed. The offline setup remains ready for a connected owner project.
