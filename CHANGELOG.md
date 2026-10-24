@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Keep a selected audio position when chapter metadata arrives after an early seek, including slow connections. Intended impact: patch.
+
 - Repair the develop deployment’s private-library connection, retain required asset verification, and identify missing build settings by name. Intended impact: patch; no production promotion.
 
 - Enforce the owner’s $0 Google policy before credentials or network calls; retain Emma playback and offline preflight. Remember the selected PDF edition across chapter changes/reloads, rejecting unlisted saved URLs. Intended impact: patch within the current development work; no main promotion.

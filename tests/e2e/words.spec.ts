@@ -26,12 +26,16 @@ test("live audio highlights actual word intervals, pauses, seeks and preserves s
   });
   await page.goto("/");
   await page.getByRole("button", { name: "Open book", exact: true }).click();
+  // Observe in the browser so runner polling cannot skip this short real cue.
+  const quietWord = page.waitForFunction(
+    () => document.querySelector(".spoken-word")?.textContent === "quiet",
+    undefined,
+    { polling: "raf", timeout: 5000 },
+  );
   await page
     .getByRole("button", { name: "Play narration", exact: true })
     .click();
-  await expect(page.locator(".spoken-word")).toHaveText("quiet", {
-    timeout: 5000,
-  });
+  await quietWord;
   await page
     .getByRole("button", { name: "Pause narration", exact: true })
     .click();
@@ -122,15 +126,13 @@ test("native word messages update spans without replacing text or clearing selec
 test("mixed-cue chapters keep following a long uncued passage without invented word highlighting", async ({
   page,
 }) => {
-  await page
-    .context()
-    .addCookies([
-      {
-        name: "reader-test-corpus",
-        value: "mixedwords",
-        url: "http://localhost:4174",
-      },
-    ]);
+  await page.context().addCookies([
+    {
+      name: "reader-test-corpus",
+      value: "mixedwords",
+      url: "http://localhost:4174",
+    },
+  ]);
   const u = await (await page.request.post("/__test/account")).json();
   await page.request.post("/api/reader/login", {
     headers: { Origin: "http://localhost:4174" },
@@ -154,4 +156,51 @@ test("mixed-cue chapters keep following a long uncued passage without invented w
   await page
     .getByRole("button", { name: "Pause narration", exact: true })
     .click();
+});
+
+test.describe("seeking while audio metadata loads", () => {
+  // Intercept the real media response so the seek is guaranteed to happen first.
+  test.use({ serviceWorkers: "block" });
+  test("keeps the reader's selected position when metadata arrives", async ({
+    page,
+  }) => {
+    let releaseAudio!: () => void;
+    const audioGate = new Promise<void>((resolve) => {
+      releaseAudio = resolve;
+    });
+    await page.route("**/books/demo/1.wav", async (route) => {
+      await audioGate;
+      await route.continue();
+    });
+    const u = await (await page.request.post("/__test/account")).json();
+    await page.request.post("/api/reader/login", {
+      headers: { Origin: "http://localhost:4174" },
+      data: { username: u.username, password: u.password },
+    });
+    try {
+      await page.goto("/");
+      await page
+        .getByRole("button", { name: "Open book", exact: true })
+        .click();
+      const position = page.getByLabel("Chapter playback position");
+      await position.fill("4.2");
+      await expect(position).toHaveValue("4.2");
+      releaseAudio();
+      const play = page.getByRole("button", {
+        name: "Play narration",
+        exact: true,
+      });
+      await expect(play).not.toHaveClass(/is-loading/);
+      await expect(position).toHaveValue("4.2");
+      await play.click();
+      await expect
+        .poll(async () => Number(await position.inputValue()))
+        .toBeGreaterThan(4.3);
+      await page
+        .getByRole("button", { name: "Pause narration", exact: true })
+        .click();
+    } finally {
+      releaseAudio();
+    }
+  });
 });

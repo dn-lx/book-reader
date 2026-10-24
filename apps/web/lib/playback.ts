@@ -26,6 +26,7 @@ export function usePlayback(
   const audio = useRef<HTMLAudioElement | null>(null),
     current = useRef<Book | null>(null),
     ci = useRef(0),
+    requestedTime = useRef(0),
     pageRef = useRef(1),
     generation = useRef(0),
     deadline = useRef(0),
@@ -66,13 +67,14 @@ export function usePlayback(
       ci.current = i;
       setChapter(i);
       setTime(t);
+      requestedTime.current = t;
       setFailed(false);
       const token = ++generation.current;
       setLoading(true);
       const ready = () => {
         if (token !== generation.current) return;
-        a.currentTime = t;
-        setTime(t);
+        a.currentTime = requestedTime.current;
+        setTime(requestedTime.current);
         setLoading(false);
         save();
       };
@@ -178,6 +180,7 @@ export function usePlayback(
         b = current.current;
       if (!a || !b) return;
       const v = clamp(t, 0, b.chapters[ci.current].duration);
+      requestedTime.current = v;
       try {
         a.currentTime = v;
         setTime(v);

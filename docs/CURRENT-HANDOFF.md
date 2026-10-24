@@ -3,7 +3,7 @@
 Updated 2026-10-24.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"04b1399eaca1bd4c1ae276722949e44d8ef26678","next_step":"Private library key saved and verified for branch-deploy with supported secret scopes. Validate and publish the repair to develop; verify hosted library/media. Keep Google blocked and main unchanged.","updated_at":"2026-10-24T10:52:43.636064+00:00"}
+{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"0ef9efd5ec884453a93afdff2454934ac589f61b","next_step":"Publish reviewed early-seek metadata race fix to develop and verify current CI/deploy. Library connection is repaired. Keep Google blocked and main unchanged.","updated_at":"2026-10-24T10:52:43.636064+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Active work and owner policy
@@ -34,7 +34,7 @@ Netlify repair 2026-10-24: prior Builds-only upserts did not persist. Independen
 
 Netlify pagechime site 73688a4b-90ab-4eac-be6d-ef305f33ebc3, team don-alex-perera, Git-linked dn-lx/pagechime. Production branch main; only develop branch deploys; npm run build → apps/web/out; reader BFF/media edge. Non-production team-login gate stays unchanged.
 
-Deploy 6adc68a6b6aa5a0945c70a3c (99992b6,develop/branch-deploy) failed building with exit2 before publication. Prior 6adc51ac3c8bc504207106c7 remains live at ae75d8b. The owner supplied the log: the private build connection is missing. The browser is signed in. Secret metadata now persists with the supported scopes described above; no production value or upgrade. Public URL/REQUIRED are in context.develop.environment. No new sign-in was requested. Hosted inner login/media GET/HEAD/Range/encoded-path acceptance remains open; local checks are separate evidence.
+Repair source 0ef9efd5ec884453a93afdff2454934ac589f61b deploy 6adc8f9361ac54958f02fa9d is ready, branch-deploy/develop with reader function and media edge. Authenticated hosted guest acceptance: library 1 book/19 chapters, advancing Emma playback, active word, chapter10, both rendered PDFs, Google disabled. Main/gate unchanged. CI caught an early-seek metadata race: deterministic desktop/mobile media-gated tests reproduced reset4.2→0. Reviewed requestedTime fix passes all8 word browser cases. Current follow-up still needs CI/deploy verification. Member login and native/device acceptance remain separate. Historical failure evidence: docs/REQ-012-VERIFICATION.md.
 
 No main promotion: main remains 2396458e46609beb8c448221a647491fb90363c9. Do not create a release PR, reopen superseded PR #2 or alter historical branches. Use GitHub MCP for writes. Preserve leaf.* keys, app.dnlx.leaf IDs, book-reader-api and book_reader_* identities.
 
