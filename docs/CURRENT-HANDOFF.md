@@ -3,7 +3,7 @@
 Updated 2026-10-24.
 
 <!-- AGENT_TASK_STATE_START -->
-{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"blocked","last_verified_sha":"04b1399eaca1bd4c1ae276722949e44d8ef26678","next_step":"The $0 Google lock and PDF edition restore are published on develop. Verify current-head GitHub checks, then resolve the separate Netlify private-log/build-connection access blocker. Keep Google requests paused and main unchanged.","updated_at":"2026-10-24T10:29:23.658322+00:00"}
+{"task_id":"REQ-012","repository":"dn-lx/pagechime","base":"develop","branch":"develop","pr":null,"status":"implementing","last_verified_sha":"04b1399eaca1bd4c1ae276722949e44d8ef26678","next_step":"Private library key saved and verified for branch-deploy with supported secret scopes. Validate and publish the repair to develop; verify hosted library/media. Keep Google blocked and main unchanged.","updated_at":"2026-10-24T10:52:43.636064+00:00"}
 <!-- AGENT_TASK_STATE_END -->
 
 ## Active work and owner policy
@@ -16,7 +16,7 @@ The reader now restores the account-local packaged PDF edition across chapter ch
 
 ## Verified book and source
 
-Prior implementation source 99992b6cae14f0eeed5c7f52d356ca8875023e69 passed all five suites: Application 40077190791, Security 40077190777, reliability 40077190810, stack 40077190793, version 40077190778. The native tooling advisory remains non-blocking REQ-005. Later documentation checkpoints are not new runtime evidence.
+Historical CI and runtime evidence is in docs/REQ-012-VERIFICATION.md. Native tooling advisories remain non-blocking REQ-005; documentation checkpoints are not new runtime evidence.
 
 Supplied unmodified Manifest All-Editions ZIP contains page-matched/cozy PDFs (237 pages), Kindle/fixed-layout EPUBs and licences. Complete M4B from Drive: Kokoro bf_emma,19 chapters,13,682.328 s. Recovered private book has 1,136 passages, 207,752 characters, 37,139/37,476 acoustic word cues (99.1% overall; chapter 90.91–100%). Untimed words remain visible without guesses. Text follows words; PDFs follow source pages without glyph overlays. Native/web preserve selection offsets; legacy passage-only books work. Source originals and contents stay outside Git.
 
@@ -28,13 +28,13 @@ Me+ `wbqnctrvxohxwiaignhg`, isolated from unrelated apps/Supabase Auth. Migratio
 
 Immutable version 7e6afd6087edca77f985476fab4019017651843388c6f4d23cc2e24e29d0bdca: 27 files/87,289,918 bytes plus current.json. Fresh download verified every hash/size. Live checks: anonymous/unknown401; build GET200/POST403; upload GET403. Temporary upload key deleted and then401; final 1 build key/0 upload keys. No new provider calls or uploads are needed for current source changes.
 
-Netlify upserts reported success for PAGECHIME_LIBRARY_URL/REQUIRED and secret KEY, requested builds scope/branch-deploy context only; getter returns[] so scope readback is unresolved. Do not broaden scope. Develop builds require the private source and fail rather than silently publishing an empty shelf.
+Netlify repair 2026-10-24: prior Builds-only upserts did not persist. Independent review passed before saving the existing read-only key with the plan’s minimum secret scopes Builds/Functions/Runtime, no Post processing, branch-deploy only. Getter confirms is_secret=true and only that context. Runtime consumers do not use the key. Connected build verifies 27 files and exports successfully; 36 tests/typechecks pass, shell 563/900 KiB, zero credential scan matches. Library remains required.
 
 ## Hosting blocker and branch policy
 
 Netlify pagechime site 73688a4b-90ab-4eac-be6d-ef305f33ebc3, team don-alex-perera, Git-linked dn-lx/pagechime. Production branch main; only develop branch deploys; npm run build → apps/web/out; reader BFF/media edge. Non-production team-login gate stays unchanged.
 
-Deploy 6adc68a6b6aa5a0945c70a3c (99992b6,develop/branch-deploy) failed building with exit2 before publication. Prior 6adc51ac3c8bc504207106c7 remains live at ae75d8b. Private build log unavailable through connector/public API. Browser sign-in was declined: respect that refusal and do not repeat unless requested. Do not claim the unverified env writes are proven as the failure cause. Hosted inner login/media GET/HEAD/Range/encoded-path acceptance remains open; local checks are separate evidence.
+Deploy 6adc68a6b6aa5a0945c70a3c (99992b6,develop/branch-deploy) failed building with exit2 before publication. Prior 6adc51ac3c8bc504207106c7 remains live at ae75d8b. The owner supplied the log: the private build connection is missing. The browser is signed in. Secret metadata now persists with the supported scopes described above; no production value or upgrade. Public URL/REQUIRED are in context.develop.environment. No new sign-in was requested. Hosted inner login/media GET/HEAD/Range/encoded-path acceptance remains open; local checks are separate evidence.
 
 No main promotion: main remains 2396458e46609beb8c448221a647491fb90363c9. Do not create a release PR, reopen superseded PR #2 or alter historical branches. Use GitHub MCP for writes. Preserve leaf.* keys, app.dnlx.leaf IDs, book-reader-api and book_reader_* identities.
 

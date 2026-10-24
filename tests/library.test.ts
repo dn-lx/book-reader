@@ -185,6 +185,23 @@ test("build restore verifies digests and prevents redirects, outside origins, un
     assert.equal(await readFile(join(root, "library.json"), "utf8"), "catalog");
     await assert.rejects(
       fetchPrivateLibrary(root, { PAGECHIME_LIBRARY_REQUIRED: "1" }, send),
+      /PAGECHIME_LIBRARY_URL, PAGECHIME_LIBRARY_KEY/,
+    );
+    await assert.rejects(
+      fetchPrivateLibrary(
+        root,
+        { PAGECHIME_LIBRARY_REQUIRED: "1", PAGECHIME_LIBRARY_URL: endpoint },
+        send,
+      ),
+      /missing: PAGECHIME_LIBRARY_KEY\./,
+    );
+    await assert.rejects(
+      fetchPrivateLibrary(
+        root,
+        { PAGECHIME_LIBRARY_REQUIRED: "1", PAGECHIME_LIBRARY_KEY: key },
+        send,
+      ),
+      /missing: PAGECHIME_LIBRARY_URL\./,
     );
     await assert.rejects(
       fetchPrivateLibrary(

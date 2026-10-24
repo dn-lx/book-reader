@@ -23,10 +23,17 @@ export async function fetchPrivateLibrary(
     if (
       env.PAGECHIME_LIBRARY_REQUIRED === "1" ||
       (env.CONTEXT === "branch-deploy" && env.BRANCH === "develop")
-    )
+    ) {
+      const missing = [
+        !endpoint && "PAGECHIME_LIBRARY_URL",
+        !token && "PAGECHIME_LIBRARY_KEY",
+      ].filter(Boolean);
       throw Error(
-        "The private develop library is required but its build connection is missing.",
+        "The private develop library build connection is missing: " +
+          missing.join(", ") +
+          ". Set these variables for develop builds in Netlify.",
       );
+    }
     return null;
   }
   const origin = new URL(endpoint);

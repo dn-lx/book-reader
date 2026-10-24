@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Repair the develop deployment’s private-library connection, retain required asset verification, and identify missing build settings by name. Intended impact: patch; no production promotion.
+
 - Enforce the owner’s $0 Google policy before credentials or network calls; retain Emma playback and offline preflight. Remember the selected PDF edition across chapter changes/reloads, rejecting unlisted saved URLs. Intended impact: patch within the current development work; no main promotion.
 
 - Restore the private Manifest editions/narration library through verified development build assets, add optional acoustic word-following cues, and repair stale/failing catalog cache behavior. Prepare matching British Neural2 audition and word-mark synthesis with explicit credentials/cost controls. Intended impact: next minor release; main remains unchanged.
