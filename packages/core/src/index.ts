@@ -1,8 +1,10 @@
+export type WordCue = { start: number; end: number; from: number; to: number };
 export type Segment = {
   start: number;
   end: number;
   page: number;
   text: string;
+  words?: WordCue[];
 };
 export type Chapter = {
   id?: string;
@@ -29,6 +31,9 @@ export type Book = {
   local?: boolean;
   narration?: "kokoro" | "google";
   alternateNarration?: string;
+  editions?: { label: string; kind: "pdf" | "epub"; url: string }[];
+  timingProvenance?: string;
+  credits?: string;
 };
 export type Progress = {
   chapter: number;
@@ -151,7 +156,35 @@ export function validateTimedBook(
       )
         throw new Error("A passage has an invalid time, page number or text.");
       previous = end;
-      return { start, end, page, text: s.text };
+      let words: WordCue[] | undefined;
+      if (s.words !== undefined) {
+        if (!Array.isArray(s.words) || s.words.length > s.text.length)
+          throw Error("Word timing data is invalid.");
+        let previousTime = start,
+          previousOffset = 0;
+        words = s.words.map((w) => {
+          if (
+            !w ||
+            !Number.isFinite(w.start) ||
+            !Number.isFinite(w.end) ||
+            w.start < previousTime - 0.001 ||
+            w.start < start ||
+            w.end <= w.start ||
+            w.end > end + 0.001 ||
+            !Number.isSafeInteger(w.from) ||
+            !Number.isSafeInteger(w.to) ||
+            w.from < previousOffset ||
+            w.to <= w.from ||
+            w.to > s.text.length ||
+            !s.text.slice(w.from, w.to).trim()
+          )
+            throw Error("A word has invalid audio timing or text offsets.");
+          previousTime = w.end;
+          previousOffset = w.to;
+          return { start: w.start, end: w.end, from: w.from, to: w.to };
+        });
+      }
+      return { start, end, page, text: s.text, ...(words ? { words } : {}) };
     });
     return {
       title: String(chapter.title || `Chapter ${i + 1}`),
@@ -189,6 +222,36 @@ export function validateBook(value: unknown): Book {
     )
   )
     throw new Error("This book file is incomplete.");
+  if (
+    b.editions !== undefined &&
+    (!Array.isArray(b.editions) ||
+      b.editions.length > 8 ||
+      b.editions.some(
+        (e) =>
+          !e ||
+          typeof e.label !== "string" ||
+          e.label.length > 80 ||
+          !["pdf", "epub"].includes(e.kind) ||
+          typeof e.url !== "string" ||
+          !e.url.startsWith(`/books/${b.id}/`) ||
+          e.url.split("/").some((part) => part === "." || part === "..") ||
+          !e.url.endsWith("." + e.kind) ||
+          !/^\/books\/[A-Za-z0-9_-]+\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.(?:pdf|epub)$/.test(
+            e.url,
+          ),
+      ))
+  )
+    throw Error("A book edition has an invalid address.");
+  if (
+    b.credits !== undefined &&
+    (typeof b.credits !== "string" ||
+      !b.credits.startsWith(`/books/${b.id}/`) ||
+      b.credits.split("/").some((part) => part === "." || part === "..") ||
+      !/^\/books\/[A-Za-z0-9_-]+\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.txt$/.test(
+        b.credits,
+      ))
+  )
+    throw Error("Book credits have an invalid address.");
   const chapters = validateTimedBook(
     b,
     b.chapters.map((c) => (c.file || c.audio).split("/").pop()!),
@@ -208,5 +271,6 @@ export function validateBook(value: unknown): Book {
 export * from "./reader-account";
 
 export * from "./reading";
+export * from "./word-following";
 
 export * from "./account-details";

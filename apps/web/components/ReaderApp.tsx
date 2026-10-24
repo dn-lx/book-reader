@@ -57,6 +57,7 @@ import {
   globalPosition,
   listeningLength,
   segmentAt,
+  narrationOffset,
   validateBook,
   validateTimedBook,
 } from "@pagechime/core";
@@ -222,11 +223,23 @@ export default function ReaderApp() {
         return [] as Book[];
       });
     let entries: Book[] = [],
-      onlineFailed = false;
+      onlineFailed = false,
+      libraryError = "";
     try {
-      const r = await fetch("/library.json");
+      const r = await fetch("/library.json", { cache: "no-store" });
       if (!r.ok) throw Error("The library could not load.");
-      const data = await r.json();
+      let data: { books: { url: string }[] };
+      try {
+        data = await r.json();
+      } catch {
+        throw Error(
+          "The library returned an unreadable response. Reload Pagechime and retry.",
+        );
+      }
+      if (!data || !Array.isArray(data.books))
+        throw Error(
+          "The shared library catalog is incomplete. Please retry shortly.",
+        );
       const results = await Promise.allSettled(
         (data.books || []).map(async (x: { url: string }) => {
           const u = new URL(x.url, location.href);
@@ -246,10 +259,16 @@ export default function ReaderApp() {
           "Some books could not load. Your saved imports are still available.",
         );
       }
-    } catch {
+    } catch (error) {
       onlineFailed = true;
+      libraryError =
+        error instanceof Error
+          ? error.message
+          : "The shared library could not load.";
       notify(
-        "The online library is unavailable. Your saved imports are still available.",
+        isGuest
+          ? "The shared library could not load. Please retry."
+          : "The online library is unavailable. Your saved imports are still available.",
       );
     }
     const locals = await localPromise;
@@ -259,7 +278,10 @@ export default function ReaderApp() {
     setBooks([...entries, ...locals]);
     if (onlineFailed && !entries.length && !locals.length)
       setError(
-        "Check your connection and retry, or add a book from your device.",
+        libraryError ||
+          (isGuest
+            ? "Check your connection and retry the shared library."
+            : "Check your connection and retry, or add a book from your device."),
       );
     setBoot(false);
   }, [notify]);
@@ -277,17 +299,20 @@ export default function ReaderApp() {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     if (!isGuest && "caches" in window)
-      caches.open(cacheName).then(async (cache) => {
-        const keys = await cache.keys();
-        setOfflineIds([
-          ...new Set(
-            keys
-              .filter((k) => new URL(k.url).pathname.endsWith("/.complete"))
-              .map((k) => /\/books\/([^/]+)\//.exec(k.url)?.[1])
-              .filter(Boolean) as string[],
-          ),
-        ]);
-      });
+      caches
+        .open(cacheName)
+        .then(async (cache) => {
+          const keys = await cache.keys();
+          setOfflineIds([
+            ...new Set(
+              keys
+                .filter((k) => new URL(k.url).pathname.endsWith("/.complete"))
+                .map((k) => /\/books\/([^/]+)\//.exec(k.url)?.[1])
+                .filter(Boolean) as string[],
+            ),
+          ]);
+        })
+        .catch(() => {});
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
       objects.current.forEach((u) => URL.revokeObjectURL(u));
@@ -358,6 +383,41 @@ export default function ReaderApp() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [reading, p.book, p.toggle, p.skip, addMark]);
+  async function chooseNarration(kind: "kokoro" | "google") {
+    if (!p.book) {
+      notify("Open a book to choose its narration.");
+      return;
+    }
+    const base = books.find((b) => b.id === p.book!.id) || p.book;
+    try {
+      let next = base;
+      if (kind === "google") {
+        if (!base.alternateNarration) return;
+        const url = new URL(base.alternateNarration, location.href);
+        if (
+          url.origin !== location.origin ||
+          !url.pathname.startsWith("/books/")
+        )
+          throw Error();
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw Error();
+        next = validateBook(await response.json());
+        if (next.id !== base.id || next.narration !== "google") throw Error();
+      }
+      const index = segmentAt(p.book.chapters[p.chapter].segments, p.time);
+      const current = p.book.chapters[p.chapter].segments[index],
+        offset = narrationOffset(current, p.time);
+      const target = next.chapters[p.chapter]?.segments[index];
+      if (!target || target.text !== current?.text) throw Error();
+      const cue = target.words?.find((w) => w.from <= offset && w.to > offset);
+      p.load(p.chapter, cue?.start ?? target.start, p.playing, next);
+      setReaderKey((k) => k + 1);
+      setReading(true);
+      setModal("");
+    } catch {
+      notify("This narration could not open. Please try again.");
+    }
+  }
   async function offline(b: Book) {
     if (isGuest) {
       setModal("join");
@@ -1221,7 +1281,11 @@ export default function ReaderApp() {
               breathe.
             </p>
             <div className="voice-choices">
-              <div className="voice-choice">
+              <button
+                className="voice-choice"
+                onClick={() => void chooseNarration("kokoro")}
+                disabled={!p.book}
+              >
                 <Headphones size={23} />
                 <div>
                   <strong>Kokoro · Emma</strong>
@@ -1232,44 +1296,34 @@ export default function ReaderApp() {
                       : "Selected · ready to listen"}
                   </span>
                 </div>
-                {p.book?.narration !== "google" && <Check size={20} />}
-              </div>
+                {p.book && p.book.narration !== "google" && <Check size={20} />}
+              </button>
               <button
                 className="voice-choice"
-                disabled={!p.book?.alternateNarration}
-                onClick={async () => {
-                  try {
-                    const url = new URL(
-                      p.book!.alternateNarration!,
-                      location.href,
-                    );
-                    if (url.origin !== location.origin) throw Error();
-                    const r = await fetch(url);
-                    if (!r.ok) throw Error();
-                    const b = validateBook(await r.json());
-                    p.open(b);
-                    setReading(true);
-                    setModal("");
-                  } catch {
-                    notify("This narration could not open. Please try again.");
-                  }
-                }}
+                disabled={
+                  !books.find((b) => b.id === p.book?.id)?.alternateNarration
+                }
+                onClick={() => void chooseNarration("google")}
               >
                 <Headphones size={23} />
                 <div>
                   <strong>Google Neural2</strong>
                   <p>British English · female</p>
                   <span>
-                    {p.book?.alternateNarration
-                      ? "Choose this narration"
-                      : "Setup needed"}
+                    {p.book?.narration === "google"
+                      ? "Selected · ready to listen"
+                      : books.find((b) => b.id === p.book?.id)
+                            ?.alternateNarration
+                        ? "Choose this narration"
+                        : "Voice audition in preparation"}
                   </span>
                 </div>
               </button>
             </div>
             <p className="muted voice-intro">
-              Google narration will appear here after Google Cloud is connected
-              and the book’s audio is prepared.
+              The Google voice is being prepared to match Emma’s British accent
+              and gentle pace. It becomes available after its full narration is
+              ready.
             </p>
           </Modal>
         )}

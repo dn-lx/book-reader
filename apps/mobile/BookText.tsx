@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { WebView } from "react-native-webview";
@@ -11,6 +11,8 @@ import {
   readingProgress,
   readingWordBudget,
   segmentAt,
+  activeWord,
+  narrationOffset,
   type Book,
   type ReaderNote,
   type ReadingAnchor,
@@ -49,6 +51,7 @@ export default function BookText({
   onNoText,
 }: Props) {
   const { read, store } = useReaderAccount();
+  const web = useRef<WebView<{}>>(null);
   const [appearance, setAppearance] = useState(() => readingAppearance(null));
   const [loaded, setLoaded] = useState(false),
     [settings, setSettings] = useState(false);
@@ -138,19 +141,7 @@ export default function BookText({
     if (loaded) void store("reading.appearance", appearance);
   }, [appearance, loaded]);
   const spoken = audioChapter.segments[audioIndex];
-  const spokenOffset = spoken
-    ? Math.min(
-        spoken.text.length - 1,
-        Math.max(
-          0,
-          Math.floor(
-            ((time - spoken.start) /
-              Math.max(0.01, spoken.end - spoken.start)) *
-              spoken.text.length,
-          ),
-        ),
-      )
-    : 0;
+  const spokenOffset = narrationOffset(spoken, time);
   const narratorPage = readingPageAt(
     pages,
     Math.max(0, audioIndex),
@@ -222,22 +213,27 @@ export default function BookText({
         page === 0,
         appearance,
         chapterNotes,
-        follow ? active : -1,
+        -1,
         c,
         context,
+        ch.segments,
       ),
-    [
-      visible,
-      ch.title,
-      readingChapter,
-      page,
-      appearance,
-      notes,
-      follow,
-      follow ? active : -1,
-      theme,
-    ],
+    [visible, ch.title, readingChapter, page, appearance, notes, theme],
   );
+  const cue =
+    active >= 0 ? activeWord(audioChapter.segments[active], time) : null;
+  const sendNarration = () =>
+    web.current?.postMessage(
+      JSON.stringify({
+        type: "narration",
+        context,
+        segment: follow ? active : -1,
+        from: follow ? (cue?.from ?? -1) : -1,
+      }),
+    );
+  useEffect(() => {
+    sendNarration();
+  }, [context, follow, active, cue?.from]);
   const button = (
     label: string,
     icon: React.ComponentProps<typeof Feather>["name"],
@@ -271,7 +267,9 @@ export default function BookText({
         </Text>
         {button("Reading appearance", "type", () => setSettings(true))}
       </View>
-      <WebView
+      <WebView<{}>
+        ref={web}
+        onLoadEnd={sendNarration}
         style={{ flex: 1, backgroundColor: c.paper }}
         source={{ html, baseUrl: "https://pagechime.local/" }}
         originWhitelist={["https://pagechime.local", "about:blank"]}

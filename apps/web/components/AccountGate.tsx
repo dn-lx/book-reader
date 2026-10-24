@@ -32,8 +32,24 @@ async function workerScope(
 ) {
   if (process.env.NODE_ENV !== "production") return;
   if (!("serviceWorker" in navigator)) return;
-  await navigator.serviceWorker.register("/sw.js");
-  await navigator.serviceWorker.ready;
+  let readyTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await navigator.serviceWorker.register("/sw.js");
+    await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, reject) => {
+        readyTimer = setTimeout(
+          () => reject(Error("Offline storage is unavailable.")),
+          5000,
+        );
+      }),
+    ]);
+  } catch (error) {
+    if (navigator.serviceWorker.controller) throw error;
+    return; // A tab without a controlling worker can read normally over the network.
+  } finally {
+    if (readyTimer) clearTimeout(readyTimer);
+  }
   if (!navigator.serviceWorker.controller)
     await new Promise<void>((resolve) => {
       const done = () => {

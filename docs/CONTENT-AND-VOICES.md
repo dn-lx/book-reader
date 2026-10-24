@@ -1,37 +1,50 @@
 # Content and voice preparation
 
-Book media and text are private inputs. The public GitHub repository contains code and an original test fixture only. Keep credentials and private books outside Git.
+Book media/text are private build inputs. Public Git contains code and original test fixtures only. Keep credentials and books outside Git. Guests can read/listen to the packaged shared library; accounts enable personal saves, imports and offline copies.
 
-## Complete Manifest
+## Restored Manifest edition
 
-The prepared book contains 237 PDF pages, 19 audio chapters, 986 timed passages and approximately 3 h 48 min of Kokoro Emma narration. British female voice, slightly slower pace, with subtle phrasing/pause variation. Cues follow source narration chunks; they are passage cues, not word-level forced alignment.
+The supplied All-Editions bundle contains two 237-page PDFs (page-matched and cozy interactive), reflowable Kindle EPUB, fixed-layout EPUB, proofreading notes and font licences. These are reconstructed user-supplied editions, not a claim of publisher-identical page images. Original inputs are preserved. The complete M4B contains 19 chapters, 13,682.328 seconds, Kokoro `bf_emma`, British English female at a gently slower pace.
+
+Preparation requires ffmpeg/ffprobe, PyMuPDF, plus an isolated alignment environment. The word alignment dependency never ships in the reader. Install CPU PyTorch/torchaudio from the official CPU wheel index before `requirements-alignment.txt`.
 
 ```sh
-python -m pip install pymupdf soundfile
-python scripts/prepare_manifest.py --pdf /private/book.pdf --narration-dir /private/manifest-complete-audiobook --chunks-dir /private/complete-chunks
+python scripts/restore-manifest.py --bundle /private/Manifest-in-Action-All-Editions.zip --audio /private/manifest.m4b --work /private/manifest-work
+python scripts/align-book.py --source /private/manifest-work/source.json --cache /private/manifest-work/alignment
 node scripts/bundle-mobile-book.mjs
 ```
 
-The preparation script needs the existing narration manifest and chunk WAVs plus ffmpeg/ffprobe. It copies the original PDF, maps text to physical PDF pages, measures audio and compresses oversized files to fit the host's per-file limit. Output lives under ignored `apps/web/public/books/manifest`. The mobile bundler copies private inputs into ignored local asset paths.
+Known EPUB text is forced-aligned to the actual Emma audio using faster-whisper/stable-ts `base.en`. Current audit: 37,139 usable word cues; chapter coverage 90.91–100%. Zero-duration/unmatched words remain visible without invented timings. Word timing is an acoustic estimate, not studio annotation; short headings/index entries need particular care. Text mode highlights real word intervals, keeps silence gaps, follows pages and preserves note/selection offsets. Original/cozy PDF modes follow the source page; they do not draw word overlays on PDF glyphs.
 
-## Book contract
+## Durable private develop assets
 
-`library.json` contains `{ "books": [{ "url": "/books/my-book/book.json" }] }`. A book has id, title, author, pageCount, pdf, chapters and duration. Each chapter contains title, audio URL, file name, duration in seconds, firstPage and segments. Each segment contains start/end seconds, physical PDF page (1-based) and text. See `packages/core/src/index.ts` and `tests/fixtures/book.json`.
+`pagechime-library` is an isolated capability-authenticated Edge Function. The private bucket is `pagechime-library-develop`. No storage policies grant anonymous or account access. Hashed capabilities are in `book_reader_library_keys`: read-only `build`, expiring upload-only `upload`. There is no privileged client key. File manifests bind immutable version/path, SHA256, size and MIME type; `current.json` changes only after all objects exist. Builds verify every downloaded digest and reject outside origins/paths, redirects, oversized bodies and symlinks.
 
-User imports accept a PDF plus one full audio file or naturally sorted chapter files. An optional JSON with a chapters list in this format enables automatic following. Without timings the reader uses manual PDF pages. Local imports do not need a cloud account.
+Owner seeding uses `scripts/seed-private-library.mjs` with endpoint/upload capability in its environment, then deletes the temporary upload capability. Never log bearer or signed URLs. Re-running an upload of existing immutable objects is intentionally denied; use verified inputs/new version or review the incomplete version explicitly. Netlify stores the separate build capability as a secret in build scope, branch-deploy context only, with `PAGECHIME_LIBRARY_URL` and `PAGECHIME_LIBRARY_REQUIRED=1`. A missing or failed configured source fails the build instead of publishing an empty shelf. Clean source-only CI uses original fixtures, without private book content or keys.
 
-## Google Neural2 — setup pending
+## Optional word cue contract
 
-The user selected **Leave Google as a setup option for now**. No paid Google requests have been made. Both apps show Google as unavailable until prepared. Neural2 is Google's cloud neural speech synthesis, distinct from the local Kokoro engine; it is not an emotion-control guarantee.
+Each segment may have `words: [{start,end,from,to}]`: chapter seconds and original UTF-16 offsets. Cues are bounded, ordered and non-overlapping. Legacy passage-only imports still work. Optional editions list bounded same-book PDF/EPUB URLs. See shared validation and `word-following.ts`.
 
-When ready, enable the Cloud Text-to-Speech API and billing in the owner's Google Cloud project, authenticate locally with application-default credentials and check current [Google pricing](https://cloud.google.com/text-to-speech/pricing) and [voice availability](https://cloud.google.com/text-to-speech/docs/voices). Default requested voice: `en-GB-Neural2-A`, British English female. Do not put a service-account file or API key in Next/Expo.
+## Matching British Google Neural2
+
+The owner requested a new Google Cloud project. Project sign-in/billing remains a connection step; no paid synthesis has run. Default is British female `en-GB-Neural2-A`, rate `0.95`, starting from the same text as Emma. Audition this and optionally `en-GB-Neural2-F` before choosing the final voice. Match accent, warmth, punctuation and pace by listening; quality and emotional expression cannot be guaranteed from a voice name. Google's documented Neural2 emotion styles apply to specific US voices, so the British setup does not send unsupported emotion controls.
+
+Create a project in the owner's Google Cloud account, attach billing, enable **Cloud Text-to-Speech API**, install Google Cloud CLI, then authenticate outside Pagechime. Never send Google credentials in chat or place ADC/service-account files in Next/Expo/Git.
 
 ```sh
 gcloud auth application-default login
-# Local preflight only; makes no synthesis requests:
-python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT
-# Only after deciding to incur Google synthesis charges:
-python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --generate
+gcloud auth application-default set-quota-project YOUR_PROJECT
+gcloud services enable texttospeech.googleapis.com --project YOUR_PROJECT
+# Offline cost preflight, then credential/voice check (no synthesis):
+python scripts/google-narration.py --book apps/web/public/books/manifest/book.json
+python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --check
+# Explicitly budgeted short audition, only after owner approves charges:
+python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --sample --generate --max-cost-usd 0.02
+# After audition acceptance and full-book cost approval:
+python scripts/google-narration.py --book apps/web/public/books/manifest/book.json --project YOUR_PROJECT --generate --max-cost-usd 4
 ```
 
-The script makes one request per passage (986 for this book, about 207,902 text characters), caches chunk WAVs for resuming, and builds independent Google timings. It links the alternate manifest for the web voice picker only after all chapters succeed. Cloud authentication, synthesis and the generated Google voice have not been tested against a live account. Native Google asset packaging remains a later integration step; the current native selector accurately shows setup pending. The CLI preflight is verified locally.
+Pricing checked 2026-10-24: Neural2 $16/million characters before free quota. SSML (except mark tags) and whitespace count. Current offline full preflight is 233,050 billable characters / upper estimate $3.7288, 1,149 bounded requests. The 110-word audition is 586 characters / $0.0094. These are estimates; confirm current pricing and account quota before generation. An explicit budget must cover the conservative estimate; the script never assumes free quota. See [pricing](https://cloud.google.com/text-to-speech/pricing), [voices](https://cloud.google.com/text-to-speech/docs/voices), [SSML marks](https://cloud.google.com/text-to-speech/docs/ssml#mark).
+
+Every word receives an SSML mark; provider timepoints must exist and be ordered. Missing marks stop preparation without guessing or automatically rebilling the cached response. Cache raw audio/timing privately for resuming. Google gets its own timing track, never Emma's. Only after all chapters succeed does the web voice picker link the alternate. Republish private assets/rebuild develop to distribute it. Native Google voice selection/packaging and live Google synthesis acceptance remain open until generated audio exists.

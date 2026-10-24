@@ -5,11 +5,35 @@ const scopeUrl = (id) =>
   new URL("/__reader-scope/" + id, self.location.origin).href;
 async function readScope(id) {
   if (!id) return null;
-  const response = await (await caches.open(SCOPES)).match(scopeUrl(id));
-  if (!response) return null;
-  const scope = await response.json();
-  return scope.expires > Date.now() ? scope : null;
+  try {
+    const response = await (await caches.open(SCOPES)).match(scopeUrl(id));
+    if (!response) return null;
+    const scope = await response.json();
+    return scope.expires > Date.now() ? scope : null;
+  } catch {
+    return null;
+  } // Unavailable cache storage never blocks a network read.
 }
+async function openCache(name) {
+  try {
+    return await caches.open(name);
+  } catch {
+    return null;
+  }
+}
+async function cached(cache, request) {
+  try {
+    return await cache?.match(request);
+  } catch {
+    return null;
+  }
+}
+async function remember(cache, request, response) {
+  try {
+    await cache?.put(request, response.clone());
+  } catch {}
+}
+
 self.addEventListener("message", (event) => {
   if (event.data?.type !== "reader-account" || !event.source?.id) return;
   event.waitUntil(
@@ -51,6 +75,7 @@ self.addEventListener("install", (event) =>
     caches
       .open(SHELL)
       .then((cache) => cache.addAll(FILES))
+      // Reject installation on incomplete precache; the previous worker stays usable.
       .then(() => self.skipWaiting()),
   ),
 );
@@ -80,12 +105,30 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       const privateFile =
         url.pathname.startsWith("/books/") || url.pathname === "/library.json";
-      const account = (await readScope(event.clientId))?.account;
+      if (
+        url.pathname.startsWith("/api/") ||
+        url.pathname.startsWith("/.netlify/")
+      )
+        return fetch(req);
+      const account = privateFile
+        ? (await readScope(event.clientId))?.account
+        : null;
       if (privateFile && !account) return fetch(event.request); // Guests never read or populate account caches.
       const bookCache = account
-        ? await caches.open("leaf-books-account-" + account)
+        ? await openCache("leaf-books-account-" + account)
         : null;
-      const stored = privateFile ? await bookCache?.match(url.href) : null;
+      const metadata =
+        url.pathname === "/library.json" || url.pathname.endsWith("/book.json");
+      if (privateFile && metadata) {
+        try {
+          const response = await fetch(new Request(req, { cache: "no-store" }));
+          if (response.ok) await remember(bookCache, req, response);
+          return response; // An online rejection must not reveal an old account copy.
+        } catch {
+          return (await cached(bookCache, url.href)) || Response.error();
+        }
+      }
+      const stored = privateFile ? await cached(bookCache, url.href) : null;
       if (stored) {
         const range = req.headers.get("range");
         if (!range) return stored;
@@ -120,33 +163,17 @@ self.addEventListener("fetch", (event) => {
           headers,
         });
       }
-      if (privateFile) {
-        const response = await fetch(req);
-        if (
-          response.ok &&
-          (url.pathname === "/library.json" ||
-            url.pathname.endsWith("/book.json"))
-        )
-          await bookCache?.put(req, response.clone());
-        return response;
-      }
-      if (
-        url.pathname.startsWith("/api/") ||
-        url.pathname.startsWith("/.netlify/")
-      )
-        return fetch(req);
-      const cached = await (await caches.open(SHELL)).match(req);
+      if (privateFile) return fetch(req);
+      const shell = await openCache(SHELL),
+        storedShell = await cached(shell, req);
       if (req.mode === "navigate") {
         try {
           return await fetch(req);
         } catch {
-          return (
-            (await (await caches.open(SHELL)).match("/index.html")) ||
-            Response.error()
-          );
+          return (await cached(shell, "/index.html")) || Response.error();
         }
       }
-      if (cached) return cached;
+      if (storedShell) return storedShell;
       return fetch(req);
     })(),
   );

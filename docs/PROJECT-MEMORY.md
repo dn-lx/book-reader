@@ -13,8 +13,8 @@
 - **Native:** Expo 58 / React Native for iOS and Android; native Expo audio, platform controls, shared text pagination/anchors, selectable text in a restricted WebView and optional offline PDF.js. Native bundles are separate from signed installs.
 - **Shared core:** packages/core exports typed book/chapters/passages, schema validation, seeking, timing selection and lossless reading pagination/highlights.
 - **Storage:** Web IndexedDB for imported books; localStorage for progress, bookmarks/preferences; Cache Storage for explicit downloads. Native document directory plus AsyncStorage. Imported files and preferences are device local; bookmarks, notes and reading positions sync through a custom Me+ API. No analytics.
-- **Hosting:** Existing private Netlify project pagechime is linked to GitHub. Only develop branch deployments are enabled; main is reserved for later explicit owner-approved promotion. Source CI and the initial development deployment pass; exact branch/runtime evidence and current environment limits are in Current Handoff. Private book build inputs must be restored separately.
-- **Voices:** Full private Kokoro Emma British female narration; Google Neural2 setup pending at the user's request. Optional generation runs locally with Google Cloud ADC, never in either client. Timings are generated separately for each voice.
+- **Hosting:** Existing private Netlify project pagechime is linked to GitHub. Only develop branch deployments are enabled; main is reserved for later explicit owner-approved promotion. Source CI and the initial development deployment pass; exact branch/runtime evidence and current environment limits are in Current Handoff. Develop builds restore hash-verified private Manifest assets from an isolated private Supabase bucket; clean source-only CI uses original fixtures.
+- **Voices:** Full private Kokoro Emma British female narration; Google Neural2 setup pending at the user's request. Optional generation runs locally with Google Cloud ADC and explicit budget, never in either client. Emma has acoustic word cues; Google uses its own provider SSML word timepoints after generation.
 
 ## Important paths
 

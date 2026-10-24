@@ -202,7 +202,7 @@ function PagechimeApp() {
     >(() => {});
   const [player, setPlayer] = useState(() =>
       createAudioPlayer(null, {
-        updateInterval: 250,
+        updateInterval: 100,
         keepAudioSessionActive: true,
       }),
     ),
@@ -316,7 +316,7 @@ function PagechimeApp() {
         const source = next.audio[c];
         const nextPlayer = createAudioPlayer(
           typeof source === "number" ? source : { uri: source },
-          { updateInterval: 250, keepAudioSessionActive: true },
+          { updateInterval: 100, keepAudioSessionActive: true },
         );
         pending.current = {
           time: target,

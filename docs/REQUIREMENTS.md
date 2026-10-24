@@ -2,6 +2,14 @@
 
 Accepted scope: Next.js website and Expo React Native app, based on Agent Project Starter. Updated 2026-10-24.
 
+## [ ] REQ-012 — Manifest library and word-following narration
+- Restore Manifest in Action from the supplied 237-page PDF/EPUB editions and complete 19-chapter audiobook, with a reliable private build asset source outside public Git.
+- Provide the Kindle-style reading/PDF experience with real optional word timestamps, active-word audio following and preserved notes/selection/reading anchors across web/native.
+- Fix catalog loading/cache failures and correctly distinguish valid empty, offline fallback and failed loads.
+- Prepare British female Neural2 with SSML word timepoints, resumable generation, credential/voice checks and clear cost controls; live synthesis requires a connected Google Cloud project.
+- Verify actual-book text/audio/page coverage, desktop/mobile runtime/screenshots, worker/private-storage negative paths, independent review, exports/budget and develop-only deployment.
+- Plan: docs/plans/REQ-012-manifest-library.md. Restored 19-chapter/237-page assets and verified private source; real word following and cache fixes implemented. Remains open for live Google synthesis and protected hosted/native acceptance.
+
 ## [ ] REQ-011 — Guest reading and reliable account creation
 - Guests can read/listen without an account. They cannot save bookmarks, notes, highlights, reading places or offline copies; guest state cannot expose or become another account's data.
 - Readers can create their own account. Usernames and email addresses are accepted consistently by web, native, API and database; admin privileges still require a private invitation.

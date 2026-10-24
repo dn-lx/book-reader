@@ -6,6 +6,9 @@ const root = dirname(dirname(fileURLToPath(import.meta.url))),
   req = createRequire(join(root, "apps/web/package.json")),
   pub = join(root, "apps/web/public");
 mkdirSync(pub, { recursive: true });
+const { fetchPrivateLibrary } = await import("./fetch-private-library.mjs");
+const restored = await fetchPrivateLibrary(pub);
+if (restored) console.log("Private library verified:", restored.count, "files; version", restored.version.slice(0,12));
 if (!existsSync(join(pub, "library.json")))
   writeFileSync(join(pub, "library.json"), '{"books":[]}');
 try {

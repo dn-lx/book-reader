@@ -300,7 +300,9 @@ export function usePlayback(
     current.current = null;
     setBook(null);
   }, [save]);
+  const clock = useCallback(() => audio.current?.currentTime ?? 0, []);
   return {
+    clock,
     book,
     chapter,
     time,

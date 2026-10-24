@@ -33,6 +33,10 @@ const send: typeof fetch = async (input, init) => {
 };
 const fixtureHash = db.table("book_reader_accounts")[0].password_hash;
 const root = resolve("apps/web/out");
+const manifestGuestPaths =
+  process.env.READER_TEST_MANIFEST === "1"
+    ? JSON.parse(await readFile(".generated/guest-media.json", "utf8"))
+    : [];
 const types: Record<string, string> = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -41,6 +45,9 @@ const types: Record<string, string> = {
   ".css": "text/css",
   ".pdf": "application/pdf",
   ".wav": "audio/wav",
+  ".mp3": "audio/mpeg",
+  ".webp": "image/webp",
+  ".epub": "application/epub+zip",
   ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
   ".png": "image/png",
@@ -95,6 +102,7 @@ http
       if (
         (path === "/library.json" || path.startsWith("/books/")) &&
         !(await authorizeMedia(request, send, [
+          ...manifestGuestPaths,
           "/library.json",
           "/books/demo/book.json",
           "/books/demo/book.pdf",
@@ -129,10 +137,23 @@ http
             : "audio.wav";
         // Isolated browser contexts choose a corpus without bypassing the real worker/auth path.
         const corpus =
-          /(?:^|; )reader-test-corpus=(long|mixed|untimed)(?:;|$)/.exec(
+          /(?:^|; )reader-test-corpus=(long|mixed|untimed|words|mixedwords)(?:;|$)/.exec(
             req.headers.cookie || "",
           )?.[1];
+        const wordBook = JSON.parse(
+          await readFile("tests/fixtures/book.json", "utf8"),
+        );
+        wordBook.chapters[0].segments[0].words = [
+          { start: 0, end: 0.4, from: 0, to: 1 },
+          { start: 0.6, end: 1.2, from: 2, to: 7 },
+          { start: 1.4, end: 2, from: 8, to: 18 },
+        ];
+        const mixedWords = structuredClone(wordBook);
+        mixedWords.chapters[0].segments[1].text =
+          "A patient sentence carries this page onward. ".repeat(240);
         const variants = {
+          mixedwords: mixedWords,
+          words: wordBook,
           long: longBook,
           mixed: mixedBook,
           untimed: untimedBook,

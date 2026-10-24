@@ -32,7 +32,9 @@ import {
   readingPageAt,
   readingWordBudget,
   readingProgress,
-  readingHighlights,
+  narrationParts,
+  narrationOffset,
+  activeWord,
   segmentAt,
   type Bookmark,
   type Progress,
@@ -66,10 +68,30 @@ type Props = {
   offlineLabel: string;
   isOffline: boolean;
 };
-function markedText(fragment: ReadingFragment, notes: ReaderNote[]) {
-  return readingHighlights(fragment, notes).map((part, i) =>
-    part.highlighted ? <mark key={i}>{part.text}</mark> : part.text,
-  );
+function markedText(
+  fragment: ReadingFragment,
+  notes: ReaderNote[],
+  segment: import("@pagechime/core").Segment,
+  current: number | undefined,
+) {
+  return narrationParts(fragment, notes, segment.words).map((part, i) => {
+    const text =
+      part.wordFrom === undefined ? (
+        part.text
+      ) : (
+        <span
+          data-word-from={part.wordFrom}
+          className={part.wordFrom === current ? "spoken-word" : undefined}
+        >
+          {part.text}
+        </span>
+      );
+    return part.highlighted ? (
+      <mark key={i}>{text}</mark>
+    ) : (
+      <span key={i}>{text}</span>
+    );
+  });
 }
 
 export default function BookReader({
@@ -110,7 +132,6 @@ export default function BookReader({
   const readingChapter = clamp(anchor.chapter, 0, book.chapters.length - 1),
     chapter = book.chapters[readingChapter];
   const previousReadingChapter = useRef(readingChapter);
-  const activeIndex = readingChapter === p.chapter ? audioIndex : -1;
   const [mode, setMode] = useState<"text" | "pdf">(() => {
     const saved = readSaved(
       "view." + book.id,
@@ -118,6 +139,8 @@ export default function BookReader({
     );
     return saved === "pdf" || !chapter.segments.length ? "pdf" : "text";
   });
+  const [pdfEdition, setPdfEdition] = useState(book.pdf);
+  const { isGuest } = useAccount();
   const [size, setSize] = useState({ width: 650, height: 560 });
   const [focus, setFocus] = useState(false),
     [selection, setSelection] = useState<AnnotationDraft | null>(null);
@@ -149,35 +172,51 @@ export default function BookReader({
     resize();
     return () => observer.disconnect();
   }, [mode, appearance.width]);
-  const spoken = audioChapter.segments[audioIndex];
-  const spokenOffset = spoken
-    ? Math.min(
-        spoken.text.length - 1,
-        Math.max(
-          0,
-          Math.floor(
-            ((p.time - spoken.start) /
-              Math.max(0.01, spoken.end - spoken.start)) *
-              spoken.text.length,
-          ),
-        ),
-      )
-    : 0;
+  const [wordClock, setWordClock] = useState(p.time);
+  useEffect(() => {
+    let frame = 0,
+      previous = "";
+    const sample = () => {
+      const time = p.clock(),
+        index = segmentAt(audioChapter.segments, time),
+        cue = activeWord(audioChapter.segments[index], time);
+      const key = index + ":" + (cue?.from ?? "gap");
+      if (key !== previous) {
+        previous = key;
+        setWordClock(time);
+      }
+      if (p.playing) frame = requestAnimationFrame(sample);
+    };
+    if (p.playing) sample();
+    else setWordClock(p.time);
+    return () => cancelAnimationFrame(frame);
+  }, [p.playing, p.chapter, p.clock, p.playing ? null : p.time, audioChapter]);
+  const trackingTime = audioChapter.segments[
+    segmentAt(audioChapter.segments, p.time)
+  ]?.words?.length
+    ? wordClock
+    : p.time;
+  const trackingIndex = segmentAt(audioChapter.segments, trackingTime);
+  const activeIndex = readingChapter === p.chapter ? trackingIndex : -1;
+  const spoken = audioChapter.segments[trackingIndex];
+  const currentWord =
+    readingChapter === p.chapter ? activeWord(spoken, trackingTime) : null;
+  const spokenOffset = narrationOffset(spoken, trackingTime);
   const narratorPage = readingPageAt(
     pages,
-    Math.max(0, audioIndex),
+    Math.max(0, trackingIndex),
     spokenOffset,
   );
   useEffect(() => {
     if (follow) {
       setAnchor({
         chapter: p.chapter,
-        segment: Math.max(0, audioIndex),
+        segment: Math.max(0, trackingIndex),
         offset: spokenOffset,
       });
       p.setPage(spoken?.page || audioChapter.firstPage || 1);
     }
-  }, [p.chapter, audioIndex, narratorPage, follow]);
+  }, [p.chapter, trackingIndex, narratorPage, follow]);
   useEffect(() => {
     if (!chapter.segments.length) {
       setMode("pdf");
@@ -212,6 +251,33 @@ export default function BookReader({
     paper.current?.scrollTo({ top: 0 });
     setSelection(null);
   }, [pageIndex, readingChapter]);
+  useEffect(() => {
+    if (
+      !follow ||
+      mode !== "text" ||
+      !currentWord ||
+      !paper.current ||
+      !prose.current
+    )
+      return;
+    const word = prose.current.querySelector<HTMLElement>(
+      `[data-segment="${trackingIndex}"] [data-word-from="${currentWord.from}"]`,
+    );
+    if (!word) return;
+    const bounds = paper.current.getBoundingClientRect(),
+      target = word.getBoundingClientRect();
+    if (target.bottom > bounds.bottom - 24)
+      paper.current.scrollTop += target.bottom - bounds.bottom + 24;
+    else if (target.top < bounds.top + 24)
+      paper.current.scrollTop += target.top - bounds.top - 24;
+  }, [
+    follow,
+    mode,
+    currentWord?.from,
+    trackingIndex,
+    pageIndex,
+    readingChapter,
+  ]);
   function remember(next: ReadingAnchor) {
     setAnchor(next);
     const old = readSaved<Progress | null>("progress." + book.id, null);
@@ -397,6 +463,25 @@ export default function BookReader({
             Original PDF
           </button>
         </div>
+        {mode === "pdf" && book.editions?.some((e) => e.kind === "pdf") && (
+          <label className="edition-choice">
+            Edition
+            <select
+              aria-label="PDF edition"
+              value={pdfEdition}
+              onChange={(e) => setPdfEdition(e.target.value)}
+            >
+              <option value={book.pdf}>Page-matched PDF</option>
+              {book.editions
+                .filter((e) => e.kind === "pdf")
+                .map((e) => (
+                  <option key={e.url} value={e.url}>
+                    {e.label}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <div className="ebook-tool-actions">
           <button
             className={`ebook-follow ${follow ? "is-following" : ""}`}
@@ -516,7 +601,7 @@ export default function BookReader({
       </div>
       {mode === "pdf" ? (
         <div className="reading-page pdf-page">
-          <PdfPage url={book.pdf} page={p.page} />
+          <PdfPage url={pdfEdition} page={p.page} />
         </div>
       ) : (
         <div
@@ -591,7 +676,12 @@ export default function BookReader({
                   data-segment={f.segment}
                   data-start={f.start}
                 >
-                  {markedText(f, chapterNotes)}
+                  {markedText(
+                    f,
+                    chapterNotes,
+                    chapter.segments[f.segment],
+                    f.segment === trackingIndex ? currentWord?.from : undefined,
+                  )}
                 </span>
               </p>
             ))}
@@ -721,6 +811,33 @@ export default function BookReader({
           Return to the narrator
           <ArrowRight size={15} />
         </button>
+      )}
+      {!!book.editions?.length && (
+        <details className="book-editions">
+          <summary>Book editions & downloads</summary>
+          <p>
+            Read here with adjustable text, or keep an edition for your
+            preferred reader. The cozy PDF also includes the workbook fields.
+          </p>
+          <div>
+            {book.editions.map((edition) =>
+              isGuest ? (
+                <button key={edition.url} onClick={offline}>
+                  {edition.label} · Sign in to download
+                </button>
+              ) : (
+                <a key={edition.url} href={edition.url} download>
+                  {edition.label} <DownloadSimple size={16} />
+                </a>
+              ),
+            )}
+          </div>
+          {book.credits && (
+            <a href={book.credits} target="_blank" rel="noreferrer">
+              Font credits
+            </a>
+          )}
+        </details>
       )}
       {mode === "text" && first && (
         <div className="ebook-tip">

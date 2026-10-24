@@ -1,0 +1,124 @@
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+test.skip(
+  process.env.READER_TEST_MANIFEST !== "1",
+  "Private supplied book acceptance; fixture CI does not contain private media.",
+);
+test("restored Manifest guest library, real word following, chapter boundaries and both PDFs", async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await expect(page.locator(".featured-book")).toContainText(
+    "Manifest in Action",
+  );
+  await page.screenshot({
+    path: info.outputPath("manifest-library.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Open book", exact: true }).click();
+  await expect(page.locator(".ebook-heading")).toContainText("Chapter 1 of 19");
+  await page
+    .getByRole("button", { name: "Play narration", exact: true })
+    .click();
+  await expect(page.locator(".spoken-word")).not.toHaveCount(0, {
+    timeout: 15000,
+  });
+  await page
+    .getByRole("button", { name: "Pause narration", exact: true })
+    .click();
+  const actual = await (
+    await page.request.get("/books/manifest/book.json")
+  ).json();
+  const lateCue = actual.chapters[0].segments[3].words[0];
+  await page
+    .getByLabel("Chapter playback position")
+    .fill(String(Math.round((lateCue.start + 0.02) * 10) / 10));
+  await expect(page.locator(".spoken-word")).not.toHaveCount(0);
+  const visibleWord = await page.locator(".spoken-word").first().boundingBox();
+  const paperBounds = await page.locator(".ebook-paper").boundingBox();
+  expect(visibleWord!.y).toBeGreaterThanOrEqual(paperBounds!.y);
+  expect(visibleWord!.y + visibleWord!.height).toBeLessThanOrEqual(
+    paperBounds!.y + paperBounds!.height,
+  );
+  await page.screenshot({
+    path: info.outputPath("manifest-word-reader.png"),
+    fullPage: true,
+  });
+  for (const n of [10, 19]) {
+    const menu = page.getByRole("button", { name: "Open library menu" });
+    if (await menu.isVisible()) await menu.click();
+    await page.screenshot({
+      path: info.outputPath(`manifest-drawer-${n}.png`),
+      fullPage: true,
+    });
+    await page
+      .getByRole("navigation", { name: "Book chapters" })
+      .getByRole("button")
+      .nth(n - 1)
+      .click();
+    await expect(page.locator(".ebook-heading")).toContainText(
+      `Chapter ${n} of 19`,
+    );
+    await expect(
+      page.getByRole("article", { name: "Book text" }),
+    ).not.toBeEmpty();
+  }
+  await page.screenshot({
+    path: info.outputPath("manifest-ending.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Original PDF", exact: true }).click();
+  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".pdf-loading")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width),
+    )
+    .toBeGreaterThan(50);
+  const ink = await page.locator("canvas").evaluate((c: HTMLCanvasElement) => {
+    const p = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 0; i < p.length; i += 64)
+      if (p[i + 3] > 0 && Math.min(p[i], p[i + 1], p[i + 2]) < 240) n++;
+    return n;
+  });
+  expect(ink).toBeGreaterThan(10);
+  await page
+    .getByLabel("PDF edition")
+    .selectOption({ label: "Cozy interactive PDF" });
+  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".pdf-loading")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width),
+    )
+    .toBeGreaterThan(50);
+  const cozyInk = await page
+    .locator("canvas")
+    .evaluate((c: HTMLCanvasElement) => {
+      const p = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 0; i < p.length; i += 64)
+        if (p[i + 3] > 0 && Math.min(p[i], p[i + 1], p[i + 2]) < 240) n++;
+      return n;
+    });
+  expect(cozyInk).toBeGreaterThan(10);
+  await page.screenshot({
+    path: info.outputPath("manifest-cozy-pdf.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const axe = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(axe.violations).toEqual([]);
+  expect(errors).toEqual([]);
+});

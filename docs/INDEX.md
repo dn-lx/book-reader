@@ -88,4 +88,5 @@ Run `node scripts/validate-docs.mjs` to check documentation structure/references
 - `docs/SECURITY-REVIEW.md` — reviewed runtime boundaries and the tracked Expo tooling advisory.
 
 - `docs/REQ-011-VERIFICATION.md` — guest/member, email signup, password reveal and security evidence.
+- `docs/REQ-012-VERIFICATION.md` — restored private library, word cues, asset capability and Neural2 verification.
 - `docs/READER-ACCOUNTS.md` — standalone Me+ accounts, first admin, Netlify setup and verification.

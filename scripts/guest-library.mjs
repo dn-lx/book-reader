@@ -33,6 +33,8 @@ export async function guestLibraryPaths(publicDirectory) {
     const data = JSON.parse(await readFile(await file(url), "utf8"));
     await file(data.pdf);
     if (data.cover) await file(data.cover);
+    for (const edition of data.editions || []) await file(edition.url);
+    if (data.credits) await file(data.credits);
     if (!Array.isArray(data.chapters))
       throw Error("Guest book has no chapters");
     for (const chapter of data.chapters) await file(chapter.audio);

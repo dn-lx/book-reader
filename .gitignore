@@ -67,3 +67,8 @@ apps/mobile/dist/
 supabase/.temp/
 
 .generated/
+
+# Private preparation and temporary downloads
+**/*.download-*
+
+.cache/

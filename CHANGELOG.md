@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Restore the private Manifest editions/narration library through verified development build assets, add optional acoustic word-following cues, and repair stale/failing catalog cache behavior. Prepare matching British Neural2 audition and word-mark synthesis with explicit credentials/cost controls. Intended impact: next minor release; main remains unchanged.
+
 - Use develop for all Pagechime implementation and development deployment. Main promotion requires a later explicit owner instruction; CI and branch guards follow this policy.
 
 Added an interactive text reader for web and Expo with reflowable pages, typography/paper/sepia/night controls, exact quotation notes/highlights and reading anchors independent of narration. Original PDF remains available; synced reading places and manual PDF pages restore correctly. Intended version impact: next minor release (0.2.0).

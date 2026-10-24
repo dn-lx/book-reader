@@ -3303,3 +3303,98 @@ progress::-webkit-progress-value {
   color: #292e24;
   cursor: pointer;
 }
+
+.spoken-word {
+  background: #ced7b4;
+  color: #26301d;
+  border-radius: 0.15em;
+  box-shadow: 0 0 0 2px #ced7b4;
+}
+[data-theme="night"] .spoken-word,
+.ebook-surface-night .spoken-word {
+  background: #c5d5a8;
+  color: #17210e;
+}
+
+.edition-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.edition-choice select {
+  max-width: 200px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.book-editions {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.book-editions summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.book-editions p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.book-editions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.book-editions a,
+.book-editions button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--accent);
+  padding: 10px 0;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .edition-choice {
+    width: 100%;
+  }
+  .edition-choice select {
+    flex: 1;
+    max-width: none;
+  }
+}
+
+/* Keep a long book's chapter list inside the available drawer height. */
+.sidebar-bottom {
+  flex-shrink: 0;
+}
+.book-navigation > .sidebar-book,
+.book-navigation > .sidebar-tabs {
+  flex-shrink: 0;
+}
+.chapters {
+  min-height: 0;
+  flex: 1;
+}
+
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar > * {
+  flex-shrink: 0;
+}
+.sidebar .book-navigation {
+  flex: 1 0 260px;
+  min-height: 260px;
+}
